@@ -76,7 +76,7 @@ export const Stat: React.FC<{
         {txt}
         {unit && <span style={{ fontSize: size * 0.3, fontWeight: 700, marginLeft: 12, letterSpacing: 2 }}>{unit}</span>}
       </div>
-      {sub && <div style={{ fontSize: 24, letterSpacing: 3, color: brand.c.dim, marginTop: 6 }}>{sub}</div>}
+      {sub && <div style={{ whiteSpace: "nowrap", fontSize: 24, letterSpacing: 3, color: brand.c.dim, marginTop: 6 }}>{sub}</div>}
     </div>
   );
 };

@@ -2,14 +2,17 @@
   "id": "telhado",
   "title": "Tesoura de telhado",
   "voice": "pt-BR-AntonioNeural",
-  "rate": "+8%",
+  "rate": "+6%",
   "scenes": [
-    { "id": "hook",      "text": "Por que o telhado não esmaga a sua casa?" },
-    { "id": "peso",      "text": "Um telhado de telhas cerâmicas pesa uns cinquenta quilos por metro quadrado. Numa casa comum, são cerca de cinco toneladas lá em cima." },
-    { "id": "empuxo",    "text": "Se você apoiar só duas vigas inclinadas, esse peso não desce reto. Ele empurra as paredes para fora." },
-    { "id": "linha",     "text": "A solução é uma peça horizontal chamada linha. Ela amarra as duas pontas e trabalha esticada, como uma corda." },
-    { "id": "triangulo", "text": "Assim nasce um triângulo. Com juntas articuladas, um quadrado tomba. O triângulo não muda de forma." },
-    { "id": "tesoura",   "text": "Somando triângulos, temos a tesoura. As pernas e as escoras são comprimidas. A linha e o pendural são tracionados." },
-    { "id": "outro",     "text": "Repita isso a cada metro e o peso vai direto para as paredes. Siga para mais blueprints." }
+    { "id": "hook",      "text": "Coloque cinco toneladas de telha em cima da sua casa. Por que ela não desaba?" },
+    { "id": "abre",      "text": "Apoie tudo em vigas inclinadas, e o peso não desce reto. Ele empurra as paredes para fora, até elas abrirem." },
+    { "id": "linha",     "text": "Solução: amarre as duas pontas com uma viga deitada, a linha. Ela segura as paredes como uma corda esticada." },
+    { "id": "enverga",   "text": "Só que a linha é longa. Com o forro pendurado, ela começa a envergar no meio." },
+    { "id": "pendural",  "text": "Então pendure a linha lá no topo, com uma peça vertical: o pendural." },
+    { "id": "cede",      "text": "Mas as pernas também são longas. Com o peso das telhas, cada uma começa a ceder." },
+    { "id": "escoras",   "text": "A resposta são as escoras. Elas apoiam o meio de cada perna no pé do pendural." },
+    { "id": "triangulo", "text": "Repare: a tesoura virou só triângulos. Um quadrado articulado tomba com um empurrão. O triângulo não muda de forma." },
+    { "id": "curioso",   "text": "E aqui está a parte mais curiosa. As peças quase não dobram. Umas são esmagadas, outras são puxadas. Por isso, madeira fina aguenta toneladas." },
+    { "id": "outro",     "text": "Repita a tesoura a cada metro, e o telhado inteiro fica de pé. Siga para ver o que segura tudo isso: a fundação." }
   ]
 }

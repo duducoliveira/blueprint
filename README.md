@@ -12,7 +12,7 @@ pip install edge-tts                                   # narração neural pt-BR
 
 python3 scripts/tts.py episodes/telhado/script.json    # gera áudio + tempo de cada palavra
 npm run studio                                         # pré-visualiza e ajusta no navegador
-npx remotion render telhado out/ep01-telhado.mp4       # exporta o MP4
+npx remotion render telhado out/ep01-telhado.mp4 # ~6 min para 80 s       # exporta o MP4
 ```
 
 1. **Roteiro**: `episodes/<id>/script.json`. Uma frase curta por cena, de 6 a 8 cenas e uns 45–60 s no total.
@@ -20,7 +20,7 @@ npx remotion render telhado out/ep01-telhado.mp4       # exporta o MP4
    A duração de cada cena vem do áudio, então não é preciso ajustar nada à mão. Para trocar a voz, mude
    `voice` no roteiro (ex.: `pt-BR-FranciscaNeural`). Para usar a sua própria voz, grave um MP3 por cena com
    o mesmo nome do arquivo, sobrescreva os gerados e rode `tts.py` antes, só para ter os tempos.
-3. **Cenas**: `src/episodes/<id>/scenes.tsx`. A animação dispara **na palavra falada**:
+3. **Cenas**: `src/episodes/<id>/scenes.tsx`. Os objetos são modelados em 3D, em metros, e a câmera se move pela cena. A animação dispara **na palavra falada**:
    `const { at } = useScene(); <Stroke d={...} from={at("linha")} />`.
 4. **Cadastro**: adicione o episódio em `src/Root.tsx`.
 
@@ -32,6 +32,7 @@ npx remotion render telhado out/ep01-telhado.mp4       # exporta o MP4
 | `Captions` | Legenda palavra a palavra, com a palavra falada em amarelo |
 | `Stroke` / `Arrow` / `Joint` | Traço que se desenha, seta de força, nó articulado |
 | `Dimension` / `Ground` | Cota técnica e hachura de solo |
+| `three/engine` | Mini motor 3D em SVG: `box`, `bar` (peça com seção), `bentBar` (peça envergando), `groundGrid`, câmera orbitando (`Cam`) e `project()` para ancorar etiquetas em pontos 3D |
 | `Callout` / `Stat` / `Reveal` | Etiqueta com linha de chamada, número com contador, texto que sobe |
 
 Cores, fonte e @handle ficam em `src/brand.ts`. **Troque `@seucanal` pelo seu perfil.**
@@ -44,14 +45,19 @@ Mantenha esse código em todos os episódios; o público aprende a "ler" os víd
 **Formato**: 45–60 s, com o gancho em pergunta nos 2 primeiros segundos. Cada cena responde a um "por quê" e
 cria o próximo. Fecha com uma chamada para o próximo episódio, o que gera sequência e incentiva seguir o perfil.
 
-**Estrutura que funciona** (usada no EP.01):
-1. Pergunta-gancho ("Por que o telhado não esmaga a sua casa?")
-2. Número que impressiona ("5 toneladas lá em cima")
-3. O problema sem a solução (as paredes abrem)
-4. A solução, uma peça de cada vez
-5. O princípio por trás (o triângulo)
-6. Tudo junto, com nomes e cores
-7. Escala real + próximo episódio
+**Estrutura que funciona: uma cadeia de problema → solução** (usada no EP.01 e tirada das referências):
+1. **Experimento em 2ª pessoa + número**: "Coloque cinco toneladas de telha em cima da sua casa. Por que ela não desaba?"
+2. **Problema 1**, mostrado falhando: "...ele empurra as paredes para fora, até elas abrirem."
+3. **Solução 1**: "Solução: amarre as duas pontas... a linha."
+4. **Problema 2, criado pela própria solução**: "Só que a linha é longa... começa a envergar."
+5. **Solução 2**: "Então pendure a linha lá no topo..."
+6. Repita o par problema/solução enquanto houver fôlego (2 a 3 vezes).
+7. **O princípio**: "Repare: a tesoura virou só triângulos."
+8. **A virada final**: "E aqui está a parte mais curiosa..." (algo contraintuitivo)
+9. **Gancho do próximo episódio**: "Siga para ver o que segura tudo isso: a fundação."
+
+Na tela, cada cena ganha um rótulo **PROBLEMA N** em vermelho ou **SOLUÇÃO N** em amarelo/ciano. Frases curtas,
+no presente, falando com "você". Palavras de transição ajudam: *só que*, *mas*, *então*, *solução*, *repare*.
 
 **Pauta inicial** (séries funcionam melhor que temas soltos):
 - *Casa por dentro*: tesoura de telhado ✅, fundação (sapata × radier × estaca), viga e pilar, laje, por que o

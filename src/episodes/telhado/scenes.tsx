@@ -1,418 +1,527 @@
 import React from "react";
 import { AbsoluteFill, Easing, interpolate, useCurrentFrame } from "remotion";
-import { brand, lerp, poly, seg, XY } from "../../brand";
-import { Arrow, Dimension, Ground, Joint, progress, Stroke } from "../../components/Draw";
+import { brand } from "../../brand";
+import { Arrow, progress } from "../../components/Draw";
 import { Callout, Reveal, Stat } from "../../components/Labels";
+import { bar, bentBar, box, Cam, groundGrid, Item, line, poly, project, Scene3D, Style, V3, v } from "../../three/engine";
 import { useScene } from "../../timeline";
 
 const { c } = brand;
-const W = brand.width;
-const H = brand.height;
-const NOW = -999; // "já desenhado" (sem animação)
 
-const Svg: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <svg width={W} height={H} style={{ position: "absolute" }}>
-    {children}
-  </svg>
-);
+// ─── Utilidades ─────────────────────────────────────────────────────
+const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
+const ease = Easing.inOut(Easing.cubic);
+const tw = (f: number, a: number, b: number, from = 0, to = 1) => interpolate(f, [a, b], [from, to], { ...clamp, easing: ease });
 
-// ─── Geometria da casa ──────────────────────────────────────────────
-const G = 1260; // chão
-const WALL_H = 260;
-const LX = 260;
-const RX = 820;
-const RAFTER = Math.hypot(280, 220);
-
-/** Posição dos topos das paredes e da cumeeira quando as paredes abrem `deg` graus. */
-const houseGeo = (deg: number) => {
-  const t = (deg * Math.PI) / 180;
-  const lt: XY = [LX - WALL_H * Math.sin(t), G - WALL_H * Math.cos(t)];
-  const rt: XY = [RX + WALL_H * Math.sin(t), lt[1]];
-  const half = (rt[0] - lt[0]) / 2;
-  const apex: XY = [540, lt[1] - Math.sqrt(Math.max(RAFTER ** 2 - half ** 2, 0))];
-  return { lt, rt, apex };
+/** Câmera interpolada entre duas posições ao longo da cena. */
+const camMove = (f: number, dur: number, a: Cam, b: Partial<Cam>): Cam => {
+  const t = tw(f, 0, dur);
+  const m = (x: number, y?: number) => (y === undefined ? x : x + (y - x) * t);
+  return {
+    ...a,
+    yaw: m(a.yaw, b.yaw),
+    pitch: m(a.pitch, b.pitch),
+    zoom: m(a.zoom, b.zoom),
+    target: b.target ? v.lerp(a.target, b.target, t) : a.target,
+  };
 };
 
-const Walls: React.FC<{ deg?: number; from?: number }> = ({ deg = 0, from = NOW }) => {
-  const frame = useCurrentFrame();
-  const p = progress(frame, from, 18);
-  const wall = (x: number, sign: number) => (
-    <g transform={`rotate(${sign * deg} ${x} ${G})`}>
-      <path
-        d={`M ${x - 14} ${G} L ${x - 14} ${G - WALL_H * p} M ${x + 14} ${G} L ${x + 14} ${G - WALL_H * p}` + (p >= 1 ? ` M ${x - 14} ${G - WALL_H} L ${x + 14} ${G - WALL_H}` : "")}
-        stroke={c.line}
-        strokeWidth={3.5}
-        fill="none"
-      />
-      {/* hachura interna da parede (alvenaria em corte) */}
-      {p >= 1 && (
-        <g opacity={0.35} stroke={c.line} strokeWidth={1.5}>
-          {Array.from({ length: 12 }, (_, i) => (
-            <path key={i} d={`M ${x - 14} ${G - 8 - i * 21} L ${x + 14} ${G - 26 - i * 21}`} />
-          ))}
-        </g>
-      )}
-    </g>
-  );
-  return (
-    <>
-      {wall(LX, -1)}
-      {wall(RX, 1)}
-    </>
-  );
-};
-
-const HouseDetails: React.FC<{ from?: number }> = ({ from = NOW }) => (
-  <>
-    <Stroke d={poly([[500, G], [500, 1140], [580, 1140], [580, G]])} from={from} dur={14} width={3} />
-    <Stroke d={poly([[330, 1070], [430, 1070], [430, 1150], [330, 1150]], true) + " M 380 1070 L 380 1150 M 330 1110 L 430 1110"} from={from + 4} dur={16} width={3} />
-    <Stroke d={poly([[650, 1070], [750, 1070], [750, 1150], [650, 1150]], true) + " M 700 1070 L 700 1150 M 650 1110 L 750 1110"} from={from + 8} dur={16} width={3} />
-  </>
-);
-
-/** Carga caindo sobre o telhado: setas em loop. */
-const LoadRain: React.FC<{ from: number; pts: XY[]; color?: string }> = ({ from, pts, color = c.accent }) => {
+/** Setas de carga caindo em loop sobre pontos da tela. */
+const LoadRain: React.FC<{ from: number; pts: { x: number; y: number }[]; color?: string; len?: number }> = ({ from, pts, color = c.accent, len = 110 }) => {
   const frame = useCurrentFrame();
   if (frame < from) return null;
   const appear = progress(frame, from, 10);
   return (
-    <g>
-      {pts.map(([x, y], i) => {
+    <svg width={brand.width} height={brand.height} style={{ position: "absolute" }}>
+      {pts.map(({ x, y }, i) => {
         const ph = ((frame - from + i * 7) % 30) / 30;
-        const yy = y - 120 + ph * 70;
+        const yy = y - len + ph * (len - 20);
         const o = Math.sin(ph * Math.PI) * appear;
         return (
           <g key={i} opacity={o} stroke={color} strokeWidth={4} strokeLinecap="round" fill="none">
-            <path d={`M ${x} ${yy - 46} L ${x} ${yy}`} />
-            <path d={`M ${x - 11} ${yy - 13} L ${x} ${yy} L ${x + 11} ${yy - 13}`} />
+            <path d={`M ${x} ${yy - 40} L ${x} ${yy}`} />
+            <path d={`M ${x - 10} ${yy - 12} L ${x} ${yy} L ${x + 10} ${yy - 12}`} />
           </g>
         );
       })}
-    </g>
+    </svg>
   );
 };
 
-const roofPts = (n: number, deg = 0): XY[] => {
-  const { lt, rt, apex } = houseGeo(deg);
-  return Array.from({ length: n }, (_, i) => {
-    const t = (i + 0.5) / n;
-    return t < 0.5 ? lerp(lt, apex, t * 2) : lerp(apex, rt, (t - 0.5) * 2);
-  });
+const Title: React.FC<{ kicker: string; from?: number; color?: string; children: React.ReactNode; size?: number }> = ({ kicker, from = 0, color = c.line, children, size = 100 }) => (
+  <>
+    <Reveal from={from} style={{ top: 270, left: 64, fontSize: 28, letterSpacing: 8, color: c.dim }}>
+      {kicker}
+    </Reveal>
+    <Reveal from={from + 4} style={{ top: 312, left: 60, fontSize: size, fontWeight: 800, color, lineHeight: 1.0, letterSpacing: -2 }}>
+      {children}
+    </Reveal>
+  </>
+);
+
+const svgPt = (p: V3, cam: Cam) => {
+  const q = project(p, cam);
+  return [q.x, q.y] as [number, number];
 };
 
-// ─── Cena 1: gancho ─────────────────────────────────────────────────
-export const Hook: React.FC = () => {
-  const { lt, rt, apex } = houseGeo(0);
-  return (
-    <AbsoluteFill>
-      <Reveal from={2} style={{ top: 300, left: 64, fontSize: 30, letterSpacing: 8, color: c.dim }}>
-        COMO FUNCIONA
-      </Reveal>
-      <Reveal from={6} style={{ top: 345, left: 60, fontSize: 112, fontWeight: 800, color: c.line, lineHeight: 1.0, letterSpacing: -3 }}>
-        A <span style={{ color: c.accent }}>TESOURA</span>
-        <br />
-        DO TELHADO
-      </Reveal>
-      <Svg>
-        <Ground x1={100} x2={980} y={G} from={0} />
-        <Walls from={6} />
-        <Stroke d={poly([lt, apex, rt])} from={18} dur={22} width={5} />
-        <HouseDetails from={30} />
-        <Dimension x1={LX} x2={RX} y={1340} label="8,00 m" from={42} />
-      </Svg>
-    </AbsoluteFill>
-  );
+// ─── Geometria (metros) ─────────────────────────────────────────────
+const HALF = 4; // meio vão
+const WH = 2.8; // altura da parede
+const RISE = 2.2; // altura da tesoura
+const ZH = 5; // meio comprimento da casa
+const RAFTER = Math.hypot(HALF, RISE);
+const ZS = Array.from({ length: 9 }, (_, i) => -4.5 + i * 1.125); // posição de cada tesoura
+const FRONT = ZS[ZS.length - 1];
+const SEC = { w: 0.12, h: 0.2 }; // seção das peças
+
+const WOOD: Style = { color: c.line, width: 2 };
+const YEL: Style = { color: c.compression, width: 2.5, tint: 0.9 };
+const CYA: Style = { color: c.tension, width: 2.5, tint: 0.9 };
+const RED: Style = { color: c.danger, width: 2.5, tint: 0.9 };
+
+/** Nós da tesoura no plano z, com paredes abertas `deg` graus. */
+const nodes = (z: number, deg = 0) => {
+  const lt = v.rotZ([-HALF, WH, z], [-HALF, 0, z], deg);
+  const rt = v.rotZ([HALF, WH, z], [HALF, 0, z], -deg);
+  const half = (rt[0] - lt[0]) / 2;
+  const A: V3 = [0, lt[1] + Math.sqrt(Math.max(RAFTER ** 2 - half ** 2, 0)), z];
+  const M: V3 = [0, lt[1], z];
+  return { L: lt, R: rt, A, M, P1: v.lerp(lt, A, 0.5), P2: v.lerp(rt, A, 0.5) };
 };
 
-// ─── Cena 2: o peso ─────────────────────────────────────────────────
-export const Peso: React.FC = () => {
-  const { at } = useScene();
-  const frame = useCurrentFrame();
-  const { lt, rt, apex } = houseGeo(0);
-  // telhas: pequenos "dentes" ao longo das águas do telhado
-  const tiles = (a: XY, b: XY) => {
-    const n = 11;
-    const nx = -(b[1] - a[1]);
-    const ny = b[0] - a[0];
-    const L = Math.hypot(nx, ny);
-    const off = a[0] < b[0] ? -1 : 1;
-    let d = "";
-    for (let i = 0; i < n; i++) {
-      const p = lerp(a, b, (i + 0.5) / n);
-      const q: XY = [p[0] + (off * nx * 16) / L, p[1] + (off * ny * 16) / L];
-      d += `M ${p[0]} ${p[1]} Q ${(p[0] + q[0]) / 2 + 8} ${(p[1] + q[1]) / 2} ${q[0]} ${q[1]} `;
+const walls = (deg = 0, st: Style = {}, gables = false): Item[] => {
+  const s = { color: c.line, width: 2, ...st };
+  const out = [
+    ...box([-HALF - 0.12, 0, -ZH], [-HALF + 0.12, WH, ZH], s, (p) => v.rotZ(p, [-HALF, 0, 0], deg)),
+    ...box([HALF - 0.12, 0, -ZH], [HALF + 0.12, WH, ZH], s, (p) => v.rotZ(p, [HALF, 0, 0], -deg)),
+  ];
+  if (gables) {
+    out.push(...box([-HALF, 0, ZH - 0.24], [HALF, WH, ZH], s), ...box([-HALF, 0, -ZH], [HALF, WH, -ZH + 0.24], s));
+    for (const z of [ZH + 0.01, -ZH - 0.01]) out.push(poly([[-HALF, WH, z], [0, WH + RISE, z], [HALF, WH, z]], s));
+  }
+  return out;
+};
+
+const shadow = (op = 0.28): Item => poly([[-HALF - 0.6, 0.01, -ZH - 0.6], [HALF + 0.6, 0.01, -ZH - 0.6], [HALF + 0.6, 0.01, ZH + 0.6], [-HALF - 0.6, 0.01, ZH + 0.6]], { color: "#0a1a38", fill: op, width: 0, tint: 1 }, -999);
+
+/** Telhado: duas águas com fiadas de telha. */
+const roof = (op = 1, rows = 9): Item[] => {
+  if (op <= 0) return [];
+  const o = 0.5; // beiral
+  const ext = (p: V3, dx: number): V3 => [p[0] + dx * o, p[1] - (RISE / HALF) * o, p[2]];
+  const st: Style = { color: c.line, width: 2, opacity: op, fill: 0.95 };
+  const out: Item[] = [];
+  for (const sgn of [-1, 1]) {
+    const e0 = ext([sgn * HALF, WH + 0.12, 0], sgn);
+    const top: V3 = [0, WH + RISE + 0.12, 0];
+    out.push(poly([[e0[0], e0[1], -ZH - o], [top[0], top[1], -ZH - o], [top[0], top[1], ZH + o], [e0[0], e0[1], ZH + o]], st));
+    for (let i = 1; i < rows; i++) {
+      const p = v.lerp(e0, top, i / rows);
+      out.push(line([p[0], p[1] + 0.02, -ZH - o], [p[0], p[1] + 0.02, ZH + o], { color: c.dim, width: 1.5, opacity: op }, 0.05));
     }
-    return d;
-  };
-  const tFrom = at("telhas");
-  const k = at("cinco");
-  const stat1 = interpolate(frame, [k - 6, k + 4], [1, 0.35], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  }
+  return out;
+};
+
+/** Uma tesoura completa (ou parcial) em z. */
+type Parts = { pernas?: Style | null; linha?: Style | null; pendural?: Style | null; escoras?: Style | null; grow?: Partial<Record<"linha" | "pendural" | "escoras", number>>; sagLinha?: number; sagPerna?: number };
+const truss = (z: number, deg: number, p: Parts): Item[] => {
+  const n = nodes(z, deg);
+  const out: Item[] = [];
+  if (p.pernas) {
+    if (p.sagPerna) {
+      const nl = v.norm([-(n.A[1] - n.L[1]), n.A[0] - n.L[0], 0]);
+      const nr = v.norm([n.A[1] - n.R[1], -(n.A[0] - n.R[0]), 0]);
+      out.push(...bentBar(n.L, n.A, p.sagPerna, v.mul(nl, -1), SEC.w, SEC.h, p.pernas), ...bentBar(n.R, n.A, p.sagPerna, v.mul(nr, -1), SEC.w, SEC.h, p.pernas));
+    } else out.push(...bar(n.L, n.A, SEC.w, SEC.h, p.pernas), ...bar(n.R, n.A, SEC.w, SEC.h, p.pernas));
+  }
+  if (p.linha) {
+    const g = p.grow?.linha ?? 1;
+    if (p.sagLinha) out.push(...bentBar(n.L, n.R, p.sagLinha, [0, -1, 0], SEC.w, SEC.h, p.linha));
+    else {
+      out.push(...bar(n.L, v.lerp(n.L, n.M, 1), SEC.w, SEC.h, p.linha, g));
+      out.push(...bar(n.R, n.M, SEC.w, SEC.h, p.linha, g));
+    }
+  }
+  if (p.pendural) out.push(...bar(n.A, v.add(n.M, [0, -(p.sagLinha ?? 0), 0]), SEC.w, SEC.h * 0.8, p.pendural, p.grow?.pendural ?? 1));
+  if (p.escoras) {
+    const g = p.grow?.escoras ?? 1;
+    out.push(...bar(n.M, n.P1, SEC.w, SEC.h * 0.8, p.escoras, g), ...bar(n.M, n.P2, SEC.w, SEC.h * 0.8, p.escoras, g));
+  }
+  return out;
+};
+
+// Câmeras base
+const CAM_HOUSE: Cam = { yaw: -38, pitch: 26, zoom: 64, target: [0, 2.4, 0], cy: 1060 };
+const CAM_FRONT: Cam = { yaw: -16, pitch: 10, zoom: 92, target: [0, 3.4, FRONT], cy: 1000, dist: 30 };
+
+// ─── 1. Gancho ──────────────────────────────────────────────────────
+export const Hook: React.FC = () => {
+  const { at, duration } = useScene();
+  const f = useCurrentFrame();
+  const cam = camMove(f, duration, { ...CAM_HOUSE, zoom: 60, cy: 1000 }, { yaw: -28, zoom: 66 });
+  const wallsOp = tw(f, 0, 18);
+  const roofOp = tw(f, 12, 30);
+  const ton = at("toneladas");
+  const pts = [-3, -1.5, 0, 1.5, 3].flatMap((z) => [-2.6, -1, 1, 2.6].map((x) => project([x, WH + RISE * (1 - Math.abs(x) / HALF) + 0.3, z], cam)));
   return (
     <AbsoluteFill>
-      <div style={{ opacity: stat1 }}>
-        <Stat label="CARGA DO TELHADO" value={50} unit="KG/M²" from={at("cinquenta")} x={64} y={270} size={110} />
-      </div>
-      <Stat label="PESO LÁ EM CIMA" value={5} unit="TONELADAS" sub="≈ 100 M² DE TELHADO" from={k} dur={18} x={64} y={470} size={150} color={c.accent} />
-      <Svg>
-        <Ground x1={100} x2={980} y={G} />
-        <Walls />
-        <HouseDetails />
-        <Stroke d={poly([lt, apex, rt])} from={NOW} width={5} />
-        <Stroke d={tiles(lt, apex)} from={tFrom} dur={20} width={2.5} color={c.dim} />
-        <Stroke d={tiles(rt, apex)} from={tFrom + 6} dur={20} width={2.5} color={c.dim} />
-        <LoadRain from={at("pesa")} pts={roofPts(8)} />
-        <Callout at={lerp(apex, rt, 0.55)} label={[860, 800]} text="TELHA" sub="CERÂMICA" from={tFrom + 8} align="right" />
-      </Svg>
+      <Stat label="PESO SOBRE A CASA" value={5} unit="TONELADAS" sub="≈ 50 KG POR M² DE TELHA" from={at("cinco")} dur={16} x={64} y={270} size={170} color={c.accent} />
+      <Scene3D
+        cam={cam}
+        items={[...groundGrid(9, 1, { opacity: tw(f, 0, 12) }), shadow(0.3 * wallsOp), ...walls(0, { opacity: wallsOp }, true), ...roof(roofOp)]}
+      />
+      <LoadRain from={ton} pts={pts.map((p) => ({ x: p.x, y: p.y }))} len={130} />
     </AbsoluteFill>
   );
 };
 
-// ─── Cena 3: empuxo ─────────────────────────────────────────────────
-const OPEN = 6.5; // graus que as paredes abrem
-export const Empuxo: React.FC = () => {
-  const { at } = useScene();
-  const frame = useCurrentFrame();
-  const push = at("empurra");
-  const deg = interpolate(frame, [push, push + 36], [0, OPEN], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.cubic) });
-  const { lt, rt, apex } = houseGeo(deg);
-  const v = at("vigas");
-  const crack = (x: number, s: number) => `M ${x} ${G - 2} l ${8 * s} -16 l ${-10 * s} -14 l ${12 * s} -18 l ${-6 * s} -14`;
+// ─── 2. Problema: as paredes abrem ──────────────────────────────────
+const OPEN = 7;
+export const Abre: React.FC = () => {
+  const { at, duration } = useScene();
+  const f = useCurrentFrame();
+  const cam = camMove(f, duration, { ...CAM_HOUSE, yaw: -30, pitch: 20, zoom: 66 }, { yaw: -22 });
+  const vi = at("vigas");
+  const em = at("empurra");
+  const deg = tw(f, em, em + 40, 0, OPEN);
+  const wallSt: Style = deg > 0.5 ? { color: c.danger, tint: tw(f, em, em + 20, 0, 0.55) } : {};
+  const rafters = ZS.flatMap((z, i) => {
+    const n = nodes(z, deg);
+    const g = tw(f, vi - 10 + i * 2, vi + 6 + i * 2);
+    const st = f > vi + 10 ? YEL : WOOD;
+    return [...bar(n.L, n.A, SEC.w, SEC.h, st, g), ...bar(n.R, n.A, SEC.w, SEC.h, st, g)];
+  });
+  const nf = nodes(FRONT, deg);
+  const lp = svgPt(nf.L, cam);
+  const rp = svgPt(nf.R, cam);
   return (
     <AbsoluteFill>
-      <Reveal from={push} style={{ top: 280, left: 64, fontSize: 30, letterSpacing: 8, color: c.dim }}>
-        SEM AMARRAÇÃO
-      </Reveal>
-      <Reveal from={push + 4} style={{ top: 325, left: 60, fontSize: 100, fontWeight: 800, color: c.danger, lineHeight: 1.0, letterSpacing: -2 }}>
+      <Title kicker="PROBLEMA 1" from={em} color={c.danger}>
         AS PAREDES
         <br />
         ABREM
-      </Reveal>
-      <Svg>
-        <Ground x1={100} x2={980} y={G} />
-        {/* prumo original */}
-        <Stroke d={`M ${LX} ${G} L ${LX} ${G - WALL_H - 40} M ${RX} ${G} L ${RX} ${G - WALL_H - 40}`} from={push} dur={10} width={2} color={c.faint} dash="10 10" />
-        <Walls deg={deg} />
-        <Stroke d={poly([lt, apex, rt])} from={0} dur={14} width={5} />
-        <Stroke d={poly([lt, apex, rt])} from={v} dur={18} width={8} color={c.accent} glow />
-        <Joint x={lt[0]} y={lt[1]} from={v} />
-        <Joint x={rt[0]} y={rt[1]} from={v} />
-        <Joint x={apex[0]} y={apex[1]} from={v} />
-        <LoadRain from={at("peso")} pts={roofPts(6, deg)} />
-        <Arrow from={[lt[0] - 20, lt[1] + 30]} to={[lt[0] - 150, lt[1] + 30]} start={push + 2} color={c.danger} width={7} head={24} />
-        <Arrow from={[rt[0] + 20, rt[1] + 30]} to={[rt[0] + 150, rt[1] + 30]} start={push + 2} color={c.danger} width={7} head={24} />
-        <Stroke d={crack(LX + 14, 1)} from={at("fora")} dur={10} width={3} color={c.danger} />
-        <Stroke d={crack(RX - 14, -1)} from={at("fora") + 3} dur={10} width={3} color={c.danger} />
-      </Svg>
+      </Title>
+      <Scene3D cam={cam} items={[...groundGrid(9), shadow(), ...walls(deg, wallSt), ...rafters]}>
+        <Arrow from={[lp[0] - 10, lp[1] + 40]} to={[lp[0] - 150, lp[1] + 40]} start={em + 4} color={c.danger} width={7} head={24} />
+        <Arrow from={[rp[0] + 10, rp[1] + 40]} to={[rp[0] + 150, rp[1] + 40]} start={em + 4} color={c.danger} width={7} head={24} />
+      </Scene3D>
+      <LoadRain from={at("peso")} pts={[-2.5, 2.5].flatMap((x) => [-3, 0, 3].map((z) => project([x, WH + RISE * 0.4 + 0.3, z], cam)))} />
     </AbsoluteFill>
   );
 };
 
-// ─── Cena 4: a linha ────────────────────────────────────────────────
+// ─── 3. Solução: a linha ────────────────────────────────────────────
 export const Linha: React.FC = () => {
-  const { at } = useScene();
-  const frame = useCurrentFrame();
-  const t = at("linha");
-  const deg = interpolate(frame, [t, t + 36], [OPEN, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.cubic) });
-  const { lt, rt, apex } = houseGeo(deg);
-  const am = at("amarra");
-  const es = at("esticada");
+  const { at, duration } = useScene();
+  const f = useCurrentFrame();
+  const cam = camMove(f, duration, { ...CAM_HOUSE, yaw: -22, pitch: 20, zoom: 66 }, { yaw: -12, zoom: 70 });
+  const am = at("amarre");
+  const deg = tw(f, am + 14, am + 50, OPEN, 0);
+  const items: Item[] = [...groundGrid(9), shadow(), ...walls(deg, deg > 0.5 ? { color: c.danger, tint: 0.55 * (deg / OPEN) } : {})];
+  ZS.forEach((z, i) => {
+    items.push(...truss(z, deg, { pernas: YEL, linha: CYA, grow: { linha: tw(f, am + i * 3, am + 16 + i * 3) } }));
+  });
+  const nf = nodes(FRONT, 0);
   return (
     <AbsoluteFill>
-      <Reveal from={es} style={{ top: 280, left: 64, fontSize: 30, letterSpacing: 8, color: c.dim }}>
-        A LINHA TRABALHA À
+      <Title kicker="SOLUÇÃO 1" from={am} color={c.tension}>
+        A LINHA
+      </Title>
+      <Reveal from={at("corda")} style={{ top: 430, left: 64, fontSize: 30, letterSpacing: 4, color: c.dim }}>
+        TRABALHA À <span style={{ color: c.tension, fontWeight: 800 }}>TRAÇÃO</span> ← →
       </Reveal>
-      <Reveal from={es + 4} style={{ top: 325, left: 60, fontSize: 120, fontWeight: 800, color: c.tension, letterSpacing: -2 }}>
-        TRAÇÃO
-      </Reveal>
-      <Reveal from={es + 10} style={{ top: 470, left: 64, fontSize: 28, letterSpacing: 3, color: c.dim }}>
-        ← PUXADA NAS DUAS PONTAS →
-      </Reveal>
-      <Svg>
-        <Ground x1={100} x2={980} y={G} />
-        <Stroke d={`M ${LX} ${G} L ${LX} ${G - WALL_H - 40} M ${RX} ${G} L ${RX} ${G - WALL_H - 40}`} from={NOW} width={2} color={c.faint} dash="10 10" opacity={interpolate(frame, [t, t + 36], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })} />
-        <Walls deg={deg} />
-        <Stroke d={poly([lt, apex, rt])} from={NOW} width={8} color={c.accent} />
-        <Stroke d={seg(lt, rt)} from={t - 4} dur={20} width={9} color={c.tension} glow />
-        <Joint x={lt[0]} y={lt[1]} from={NOW} />
-        <Joint x={rt[0]} y={rt[1]} from={NOW} />
-        <Joint x={apex[0]} y={apex[1]} from={NOW} />
-        <Callout at={[540, lt[1]]} label={[540, 1120]} text="LINHA" sub="PEÇA HORIZONTAL" from={t + 14} color={c.tension} />
-        <Arrow from={[400, lt[1] - 40]} to={[300, lt[1] - 40]} start={am} color={c.tension} />
-        <Arrow from={[680, lt[1] - 40]} to={[780, lt[1] - 40]} start={am} color={c.tension} />
-      </Svg>
+      <Scene3D cam={cam} items={items}>
+        <Callout at={svgPt(v.lerp(nf.L, nf.M, 0.4), cam)} label={[90, 1370]} text="LINHA" sub="VIGA DEITADA" from={at("linha", 1) + 6} color={c.tension} />
+      </Scene3D>
     </AbsoluteFill>
   );
 };
 
-// ─── Cena 5: por que triângulos ─────────────────────────────────────
-export const Triangulo: React.FC = () => {
-  const { at } = useScene();
-  const frame = useCurrentFrame();
-  const GY = 1200;
-  const t1 = at("triangulo", 1);
-  const ju = at("juntas");
-  const tb = at("tomba");
-  const t2 = at("triangulo", 2);
-  // quadrado articulado tombando
-  const L = 220;
-  const phi = interpolate(frame, [tb, tb + 30], [0, 46], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.in(Easing.quad) });
-  const pr = (phi * Math.PI) / 180;
-  const S1: XY = [110, GY];
-  const S2: XY = [110 + L, GY];
-  const S3: XY = [S2[0] + L * Math.sin(pr), GY - L * Math.cos(pr)];
-  const S4: XY = [S1[0] + L * Math.sin(pr), GY - L * Math.cos(pr)];
-  // triângulo: só um tremor que some
-  const jit = frame > t2 ? Math.sin((frame - t2) * 1.6) * 6 * Math.exp(-(frame - t2) / 8) : 0;
-  const T1: XY = [600, GY];
-  const T2: XY = [940, GY];
-  const T3: XY = [770 + jit, GY - 280];
-  const lab = (x: number, from: number, text: string, color: string) => (
-    <Reveal from={from} style={{ top: 1290, left: x, width: 400, textAlign: "center", fontSize: 34, fontWeight: 800, letterSpacing: 4, color }}>
-      {text}
-    </Reveal>
-  );
+// ─── 4. Problema: a linha enverga ──────────────────────────────────
+const ForroLoad: React.FC<{ from: number; cam: Cam; sag: number }> = ({ from, cam, sag }) => {
+  const pts = [-3, -2, -1, 0, 1, 2, 3].map((x) => project([x, WH - 0.12 - sag * Math.sin((Math.PI * (x + HALF)) / (2 * HALF)), FRONT], cam));
+  return <LoadRain from={from} pts={pts.map((p) => ({ x: p.x, y: p.y + 110 }))} color={c.dim} len={80} />;
+};
+
+export const Enverga: React.FC = () => {
+  const { at, duration } = useScene();
+  const f = useCurrentFrame();
+  const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -24 }, { yaw: -14 });
+  const env = at("envergar");
+  const sag = tw(f, env - 6, env + 26, 0, 0.55);
+  const items: Item[] = [...groundGrid(9), ...walls(0, { opacity: 0.6 })];
+  ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 } })));
+  items.push(...truss(FRONT, 0, { pernas: YEL, linha: sag > 0.05 ? RED : CYA, sagLinha: sag }));
   return (
     <AbsoluteFill>
-      <Reveal from={2} style={{ top: 280, left: 64, fontSize: 30, letterSpacing: 8, color: c.dim }}>
-        GEOMETRIA
-      </Reveal>
-      <Reveal from={6} style={{ top: 325, left: 60, fontSize: 96, fontWeight: 800, color: c.line, lineHeight: 1.0, letterSpacing: -2 }}>
-        POR QUE
+      <Title kicker="PROBLEMA 2" from={env - 4} color={c.danger}>
+        A LINHA
         <br />
-        <span style={{ color: c.accent }}>TRIÂNGULOS?</span>
-      </Reveal>
-      <Svg>
-        <Ground x1={60} x2={1020} y={GY} from={0} />
-        {/* quadrado */}
-        <Stroke d={poly([S1, S4, S3, S2])} from={ju} dur={20} width={6} />
-        {[S1, S2, S3, S4].map((p, i) => (
-          <Joint key={i} x={p[0]} y={p[1]} from={ju + 12} r={11} color={frame > tb ? c.danger : c.line} />
-        ))}
-        <Arrow from={[S4[0] - 150, S4[1]]} to={[S4[0] - 20, S4[1]]} start={tb - 6} dur={8} color={c.danger} width={7} head={24} />
-        {/* triângulo */}
-        <Stroke d={poly([T1, T3, T2], true)} from={t1} dur={22} width={6} color={c.accent} />
-        {[T1, T2, T3].map((p, i) => (
-          <Joint key={i} x={p[0]} y={p[1]} from={t1 + 14} r={11} color={c.accent} />
-        ))}
-        <Arrow from={[T3[0] - 170, T3[1]]} to={[T3[0] - 22, T3[1]]} start={t2 - 6} dur={8} color={c.danger} width={7} head={24} />
-      </Svg>
-      {lab(35, tb + 18, "✕ TOMBA", c.danger)}
-      {lab(570, t2 + 10, "✓ RÍGIDO", c.accent)}
+        ENVERGA
+      </Title>
+      <ForroLoad from={at("forro")} cam={cam} sag={sag} />
+      <Scene3D cam={cam} items={items}>
+        <Callout at={svgPt([1.6, WH - 0.4, FRONT], cam)} label={[1010, 1370]} text="FORRO" sub="PENDURADO NA LINHA" from={at("forro") + 4} color={c.dim} align="right" />
+      </Scene3D>
     </AbsoluteFill>
   );
 };
 
-// ─── Cena 6: a tesoura ──────────────────────────────────────────────
-const truss = (cx: number, by: number, half: number, h: number) => {
-  const L: XY = [cx - half, by];
-  const R: XY = [cx + half, by];
-  const A: XY = [cx, by - h];
-  const M: XY = [cx, by];
-  const P1 = lerp(L, A, 0.5);
-  const P2 = lerp(R, A, 0.5);
-  return { L, R, A, M, P1, P2 };
+// ─── 5. Solução: o pendural ─────────────────────────────────────────
+export const Pendural: React.FC = () => {
+  const { at, duration } = useScene();
+  const f = useCurrentFrame();
+  const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -14 }, { yaw: -8 });
+  const pe = at("pendure");
+  const g = tw(f, pe, pe + 22);
+  const sag = tw(f, pe + 14, pe + 34, 0.55, 0);
+  const items: Item[] = [...groundGrid(9), ...walls(0, { opacity: 0.6 })];
+  ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 } })));
+  items.push(...truss(FRONT, 0, { pernas: YEL, linha: sag > 0.05 ? RED : CYA, sagLinha: sag, pendural: CYA, grow: { pendural: g } }));
+  const n = nodes(FRONT);
+  return (
+    <AbsoluteFill>
+      <Title kicker="SOLUÇÃO 2" from={pe} color={c.tension}>
+        O PENDURAL
+      </Title>
+      <Scene3D cam={cam} items={items}>
+        <Callout at={svgPt(v.lerp(n.A, n.M, 0.45), cam)} label={[1010, 760]} text="PENDURAL" sub="SEGURA A LINHA" from={at("pendural") + 4} color={c.tension} align="right" />
+      </Scene3D>
+    </AbsoluteFill>
+  );
 };
 
-const Support: React.FC<{ p: XY; from?: number }> = ({ p, from = 0 }) => (
-  <Stroke d={`M ${p[0]} ${p[1] + 10} L ${p[0] - 26} ${p[1] + 48} L ${p[0] + 26} ${p[1] + 48} Z M ${p[0] - 40} ${p[1] + 48} L ${p[0] + 40} ${p[1] + 48}`} from={from} dur={14} width={3} color={c.dim} />
-);
+// ─── 6. Problema: as pernas cedem ───────────────────────────────────
+export const Cede: React.FC = () => {
+  const { at, duration } = useScene();
+  const f = useCurrentFrame();
+  const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -8 }, { yaw: -18, zoom: 96 });
+  const ce = at("ceder");
+  const sag = tw(f, ce - 10, ce + 22, 0, 0.42);
+  const items: Item[] = [...groundGrid(9), ...walls(0, { opacity: 0.6 })];
+  ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 } })));
+  items.push(...truss(FRONT, 0, { pernas: sag > 0.05 ? RED : YEL, linha: CYA, pendural: CYA, sagPerna: sag }));
+  const tel = at("telhas");
+  const pts = [0.25, 0.5, 0.75].flatMap((t) => {
+    const n = nodes(FRONT);
+    return [v.lerp(n.L, n.A, t), v.lerp(n.R, n.A, t)].map((p) => project(v.add(p, [0, 0.25, 0]), cam));
+  });
+  return (
+    <AbsoluteFill>
+      <Title kicker="PROBLEMA 3" from={ce - 6} color={c.danger}>
+        AS PERNAS
+        <br />
+        CEDEM
+      </Title>
+      <LoadRain from={tel} pts={pts.map((p) => ({ x: p.x, y: p.y }))} />
+      <Scene3D cam={cam} items={items}>
+        <Callout at={svgPt(v.lerp(nodes(FRONT).L, nodes(FRONT).A, 0.3), cam)} label={[70, 1370]} text="PERNA" sub="VIGA INCLINADA" from={at("pernas") + 2} color={c.compression} />
+      </Scene3D>
+    </AbsoluteFill>
+  );
+};
 
-export const Tesoura: React.FC = () => {
-  const { at } = useScene();
-  const { L, R, A, M, P1, P2 } = truss(540, 1150, 430, 380);
-  const pe = at("pernas");
+// ─── 7. Solução: as escoras ─────────────────────────────────────────
+export const Escoras: React.FC = () => {
+  const { at, duration } = useScene();
+  const f = useCurrentFrame();
+  const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -18, zoom: 96 }, { yaw: -26, zoom: 92 });
   const es = at("escoras");
-  const co = at("comprimidas");
-  const li = at("linha");
-  const pd = at("pendural");
-  const tr = at("tracionados");
+  const g = tw(f, es, es + 20);
+  const sag = tw(f, es + 12, es + 32, 0.42, 0);
+  const items: Item[] = [...groundGrid(9), ...walls(0, { opacity: 0.6 })];
+  ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 } })));
+  items.push(...truss(FRONT, 0, { pernas: sag > 0.05 ? RED : YEL, linha: CYA, pendural: CYA, escoras: YEL, sagPerna: sag, grow: { escoras: g } }));
+  const n = nodes(FRONT);
+  return (
+    <AbsoluteFill>
+      <Title kicker="SOLUÇÃO 3" from={es} color={c.compression}>
+        AS ESCORAS
+      </Title>
+      <Scene3D cam={cam} items={items}>
+        <Callout at={svgPt(v.lerp(n.M, n.P2, 0.55), cam)} label={[1010, 1370]} text="ESCORA" sub="APOIA O MEIO DA PERNA" from={es + 8} color={c.compression} align="right" />
+      </Scene3D>
+    </AbsoluteFill>
+  );
+};
+
+// ─── 8. Por que triângulos ──────────────────────────────────────────
+export const Triangulo: React.FC = () => {
+  const { at, duration } = useScene();
+  const f = useCurrentFrame();
+  const tr = at("triangulos");
+  const qd = at("quadrado");
+  const tb = at("empurrao");
+  const t2 = at("triangulo", 2);
+  const swap = tw(f, qd - 10, qd + 4);
+  // parte A: a tesoura acende seus 4 triângulos
+  const camA = camMove(f, qd, { ...CAM_FRONT, yaw: -10, zoom: 92 }, { yaw: -4 });
+  const n = nodes(FRONT);
+  const tri = (pts: V3[], i: number): Item => poly(pts.map((p) => v.add(p, [0, 0, 0.02])), { color: c.accent, fill: 0.35 * tw(f, tr + i * 4, tr + 8 + i * 4) * (1 - swap), tint: 1, width: 0 }, 0.2);
+  const itemsA: Item[] = [
+    ...groundGrid(9, 1, { opacity: 1 - swap }),
+    ...truss(FRONT, 0, { pernas: YEL, linha: CYA, pendural: CYA, escoras: YEL }).map((it) => ({ ...it, st: { ...it.st, opacity: 1 - swap } })),
+    tri([n.L, n.P1, n.M], 0),
+    tri([n.P1, n.A, n.M], 1),
+    tri([n.A, n.P2, n.M], 2),
+    tri([n.P2, n.R, n.M], 3),
+  ];
+  // parte B: quadrado articulado x triângulo, em 3D
+  const camB: Cam = { yaw: interpolate(f, [qd, duration], [-30, -18], clamp), pitch: 18, zoom: 120, target: [0, 1.1, 0], cy: 1080, dist: 30 };
+  const phi = tw(f, tb, tb + 26, 0, 48) * (Math.PI / 180);
+  const Ls = 2.1;
+  const S1: V3 = [-3.4, 0.1, 0];
+  const S2: V3 = [-3.4 + Ls, 0.1, 0];
+  const S3: V3 = v.add(S2, [Ls * Math.sin(phi), Ls * Math.cos(phi), 0]);
+  const S4: V3 = v.add(S1, [Ls * Math.sin(phi), Ls * Math.cos(phi), 0]);
+  const jit = f > t2 ? Math.sin((f - t2) * 1.6) * 0.06 * Math.exp(-(f - t2) / 8) : 0;
+  const T1: V3 = [0.6, 0.1, 0];
+  const T2: V3 = [3.4, 0.1, 0];
+  const T3: V3 = [2 + jit, 2.4, 0];
+  const sqSt: Style = f > tb + 4 ? RED : WOOD;
+  const S = 0.16;
+  const itemsB: Item[] =
+    swap > 0
+      ? [
+          ...groundGrid(6, 0.5),
+          ...bar(S1, S4, S, S, sqSt),
+          ...bar(S4, S3, S, S, sqSt),
+          ...bar(S3, S2, S, S, sqSt),
+          ...bar(S1, S2, S, S, sqSt),
+          ...bar(T1, T3, S, S, YEL),
+          ...bar(T3, T2, S, S, YEL),
+          ...bar(T1, T2, S, S, YEL),
+        ].map((it) => ({ ...it, st: { ...it.st, opacity: swap } }))
+      : [];
+  const pB = (p: V3) => project(p, camB);
+  return (
+    <AbsoluteFill>
+      <Title kicker="O SEGREDO" from={tr - 4}>
+        SÓ
+        <br />
+        <span style={{ color: c.accent }}>TRIÂNGULOS</span>
+      </Title>
+      {swap < 1 && <Scene3D cam={camA} items={itemsA} />}
+      {swap > 0 && (
+        <Scene3D cam={camB} items={itemsB}>
+          <g opacity={swap}>
+            {[S1, S2, S3, S4].map((p, i) => (
+              <circle key={i} cx={pB(p).x} cy={pB(p).y} r={11} fill={c.bgBottom} stroke={f > tb + 4 ? c.danger : c.line} strokeWidth={3} />
+            ))}
+            {[T1, T2, T3].map((p, i) => (
+              <circle key={i} cx={pB(p).x} cy={pB(p).y} r={11} fill={c.bgBottom} stroke={c.accent} strokeWidth={3} />
+            ))}
+          </g>
+          <Arrow from={[pB(S4).x - 160, pB(S4).y]} to={[pB(S4).x - 18, pB(S4).y]} start={tb - 6} dur={8} color={c.danger} width={7} head={24} />
+          <Arrow from={[pB(T3).x - 170, pB(T3).y]} to={[pB(T3).x - 20, pB(T3).y]} start={t2 - 6} dur={8} color={c.danger} width={7} head={24} />
+        </Scene3D>
+      )}
+      <Reveal from={tb + 16} style={{ top: 1300, left: 60, width: 440, textAlign: "center", fontSize: 34, fontWeight: 800, letterSpacing: 4, color: c.danger }}>
+        ✕ TOMBA
+      </Reveal>
+      <Reveal from={t2 + 10} style={{ top: 1300, left: 560, width: 440, textAlign: "center", fontSize: 34, fontWeight: 800, letterSpacing: 4, color: c.accent }}>
+        ✓ RÍGIDO
+      </Reveal>
+    </AbsoluteFill>
+  );
+};
+
+// ─── 9. A parte curiosa: compressão x tração ───────────────────────
+export const Curioso: React.FC = () => {
+  const { at, duration } = useScene();
+  const f = useCurrentFrame();
+  const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -42, pitch: 16, zoom: 88 }, { yaw: -12, zoom: 92 });
+  const es = at("esmagadas");
+  const pu = at("puxadas");
+  const items: Item[] = [...groundGrid(9), ...walls(0, { opacity: 0.6 })];
+  ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 }, pendural: { ...WOOD, opacity: 0.14 }, escoras: { ...WOOD, opacity: 0.14 } })));
+  items.push(...truss(FRONT, 0, { pernas: f >= es ? YEL : WOOD, escoras: f >= es ? YEL : WOOD, linha: f >= pu ? CYA : WOOD, pendural: f >= pu ? CYA : WOOD }));
+  const n = nodes(FRONT);
+  // setinhas: compressão →← (apontam para o meio da peça), tração ←→ (apontam para fora)
+  const pair = (a: V3, b: V3, inward: boolean, from: number, color: string, k: number) => {
+    const m = svgPt(v.lerp(a, b, 0.5), cam);
+    const pa = svgPt(a, cam);
+    const pb = svgPt(b, cam);
+    const d = [pb[0] - pa[0], pb[1] - pa[1]];
+    const L = Math.hypot(d[0], d[1]);
+    const u = [d[0] / L, d[1] / L];
+    const off = [-u[1] * 34, u[0] * 34];
+    const pulse = 1 + 0.12 * Math.sin((f - from) / 4);
+    const r1 = 70 * pulse;
+    const r2 = 22;
+    const P = (r: number, s: number): [number, number] => [m[0] + off[0] + u[0] * r * s, m[1] + off[1] + u[1] * r * s];
+    return (
+      <g key={k}>
+        <Arrow from={inward ? P(r1, -1) : P(r2, -1)} to={inward ? P(r2, -1) : P(r1, -1)} start={from} dur={8} color={color} width={4} head={13} />
+        <Arrow from={inward ? P(r1, 1) : P(r2, 1)} to={inward ? P(r2, 1) : P(r1, 1)} start={from} dur={8} color={color} width={4} head={13} />
+      </g>
+    );
+  };
   const legend = (y: number, from: number, color: string, text: string, sym: string) => (
-    <Reveal from={from} style={{ top: y, left: 64, display: "flex", alignItems: "center", gap: 22, fontSize: 40, fontWeight: 800, letterSpacing: 3, color }}>
-      <span style={{ width: 70, height: 10, background: color, borderRadius: 5, display: "inline-block" }} />
+    <Reveal from={from} style={{ top: y, left: 64, display: "flex", alignItems: "center", gap: 22, fontSize: 44, fontWeight: 800, letterSpacing: 3, color }}>
+      <span style={{ width: 70, height: 12, background: color, borderRadius: 6, display: "inline-block" }} />
       {text}
-      <span style={{ fontSize: 30, color: c.dim, fontWeight: 500 }}>{sym}</span>
+      <span style={{ fontSize: 34, color: c.dim, fontWeight: 500 }}>{sym}</span>
     </Reveal>
   );
   return (
     <AbsoluteFill>
-      <Reveal from={2} style={{ top: 280, left: 64, fontSize: 30, letterSpacing: 8, color: c.dim }}>
-        TESOURA · ANATOMIA
+      <Reveal from={0} style={{ top: 270, left: 64, fontSize: 28, letterSpacing: 8, color: c.dim }}>
+        A PARTE MAIS CURIOSA
       </Reveal>
-      {legend(340, co, c.compression, "COMPRESSÃO", "→ ←")}
-      {legend(410, tr, c.tension, "TRAÇÃO", "← →")}
-      <Svg>
-        <Support p={L} from={4} />
-        <Support p={R} from={4} />
-        <Stroke d={poly([L, A, R], true)} from={0} dur={26} width={6} />
-        <Stroke d={seg(A, M)} from={16} dur={14} width={6} />
-        <Stroke d={`${seg(M, P1)} ${seg(M, P2)}`} from={24} dur={14} width={6} />
-        {/* cores por esforço */}
-        <Stroke d={`${seg(L, A)} ${seg(R, A)}`} from={pe} dur={16} width={11} color={c.compression} glow />
-        <Stroke d={`${seg(M, P1)} ${seg(M, P2)}`} from={es} dur={14} width={11} color={c.compression} glow />
-        <Stroke d={seg(L, R)} from={li} dur={16} width={11} color={c.tension} glow />
-        <Stroke d={seg(M, A)} from={pd} dur={14} width={11} color={c.tension} glow />
-        {[L, R, A, M, P1, P2].map((p, i) => (
-          <Joint key={i} x={p[0]} y={p[1]} from={30 + i * 2} r={10} />
-        ))}
-        <Callout at={lerp(L, A, 0.25)} label={[70, 900]} text="PERNA" from={pe + 6} color={c.compression} />
-        <Callout at={lerp(M, P2, 0.5)} label={[1010, 1290]} text="ESCORA" from={es + 6} color={c.compression} align="right" />
-        <Callout at={lerp(L, M, 0.5)} label={[70, 1290]} text="LINHA" from={li + 6} color={c.tension} />
-        <Callout at={lerp(M, A, 0.62)} label={[1010, 700]} text="PENDURAL" from={pd + 6} color={c.tension} align="right" />
-      </Svg>
+      <Reveal from={at("dobram") - 4} style={{ top: 312, left: 60, fontSize: 64, fontWeight: 800, color: c.line, letterSpacing: -1 }}>
+        QUASE NADA DOBRA
+      </Reveal>
+      {legend(410, es, c.compression, "ESMAGADA", "→ ←")}
+      {legend(480, pu, c.tension, "PUXADA", "← →")}
+      <Scene3D cam={cam} items={items}>
+        {pair(n.L, n.A, true, es + 2, c.compression, 1)}
+        {pair(n.R, n.A, true, es + 4, c.compression, 2)}
+        {pair(n.L, n.R, false, pu + 2, c.tension, 3)}
+        {pair(n.M, n.A, false, pu + 4, c.tension, 4)}
+      </Scene3D>
+      <Stat label="" value={5} unit="T" sub="PEÇAS DE 6×16 CM" from={at("toneladas")} dur={10} x={1016} y={560} size={110} color={c.accent} align="right" />
     </AbsoluteFill>
   );
 };
 
-// ─── Cena 7: encerramento ───────────────────────────────────────────
+// ─── 10. Encerramento: o telhado inteiro ────────────────────────────
 export const Outro: React.FC = () => {
-  const { at } = useScene();
-  const frame = useCurrentFrame();
+  const { at, duration } = useScene();
+  const f = useCurrentFrame();
+  const cam = camMove(f, duration, { ...CAM_HOUSE, yaw: -58, pitch: 24, zoom: 60 }, { yaw: -24, zoom: 64 });
   const rp = at("repita");
-  const pa = at("paredes");
+  const te = at("telhado");
   const sg = at("siga");
-  const N = 6;
-  const DX = 66;
-  const DY = -48;
-  const ts = Array.from({ length: N }, (_, i) => truss(330 + i * DX, 1150 + i * DY, 230, 200));
-  const dimAll = interpolate(frame, [sg, sg + 12], [1, 0.22], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const card = progress(frame, sg + 4, 14);
+  const items: Item[] = [...groundGrid(9), shadow(), ...walls(0, {}, false)];
+  ZS.forEach((z, i) => {
+    const g = tw(f, rp + i * 4, rp + 14 + i * 4);
+    if (g <= 0) return;
+    items.push(...truss(z, 0, { pernas: { ...YEL, opacity: g }, linha: { ...CYA, opacity: g }, pendural: { ...CYA, opacity: g }, escoras: { ...YEL, opacity: g } }));
+  });
+  // cumeeira e terças
+  const tg = tw(f, rp + 40, rp + 60);
+  if (tg > 0)
+    for (const t of [0, 0.33, 0.66])
+      for (const sgn of [-1, 1]) {
+        const p = v.lerp([sgn * HALF, WH + SEC.h, 0], [0, WH + RISE + SEC.h, 0], t);
+        items.push(...bar([p[0], p[1], -ZH], [p[0], p[1], -ZH + 2 * ZH * tg], 0.1, 0.1, WOOD));
+      }
+  items.push(...roof(tw(f, te, te + 24, 0, 0.9)));
+  const dim = tw(f, sg, sg + 12, 1, 0.22);
+  const card = progress(f, sg + 4, 14);
   return (
     <AbsoluteFill>
-      <div style={{ opacity: dimAll }}>
-        <Reveal from={rp} style={{ top: 280, left: 64, fontSize: 30, letterSpacing: 8, color: c.dim }}>
+      <div style={{ opacity: dim }}>
+        <Reveal from={rp} style={{ top: 270, left: 64, fontSize: 28, letterSpacing: 8, color: c.dim }}>
           UMA TESOURA A CADA
         </Reveal>
-        <Stat label="" value={1} unit="METRO" from={at("metro")} dur={6} x={60} y={310} size={140} color={c.accent} />
+        <Stat label="" value={1} unit="METRO" from={at("metro")} dur={6} x={60} y={300} size={150} color={c.accent} />
       </div>
-      <Svg>
-        <g opacity={dimAll}>
-          {ts
-            .map((t, i) => ({ t, i }))
-            .reverse()
-            .map(({ t, i }) => {
-              const f = rp + i * 6;
-              const o = 1 - i * 0.12;
-              return (
-                <g key={i} opacity={o}>
-                  <Stroke d={poly([t.L, t.A, t.R], true) + " " + seg(t.A, t.M) + " " + seg(t.M, t.P1) + " " + seg(t.M, t.P2)} from={f} dur={16} width={4} />
-                </g>
-              );
-            })}
-          {/* cumeeira e frechais ligando as tesouras */}
-          <Stroke d={seg(ts[0].A, ts[N - 1].A)} from={rp + 40} dur={14} width={3} color={c.dim} />
-          <Stroke d={seg(ts[0].L, ts[N - 1].L)} from={rp + 44} dur={14} width={3} color={c.dim} />
-          <Stroke d={seg(ts[0].R, ts[N - 1].R)} from={rp + 48} dur={14} width={3} color={c.dim} />
-          {/* paredes recebendo a carga */}
-          <Stroke d={poly([ts[0].L, [ts[0].L[0], 1330], [ts[N - 1].L[0], 1330 + (N - 1) * DY], ts[N - 1].L])} from={pa - 6} dur={16} width={3} color={c.line} />
-          <Stroke d={poly([ts[0].R, [ts[0].R[0], 1330], [ts[N - 1].R[0], 1330 + (N - 1) * DY], ts[N - 1].R])} from={pa - 4} dur={16} width={3} color={c.line} />
-          {ts.map((t, i) => (
-            <g key={i}>
-              <Arrow from={[t.L[0], t.L[1] - 90]} to={[t.L[0], t.L[1] - 14]} start={pa + i * 2} color={c.accent} />
-              <Arrow from={[t.R[0], t.R[1] - 90]} to={[t.R[0], t.R[1] - 14]} start={pa + i * 2} color={c.accent} />
-            </g>
-          ))}
-        </g>
-      </Svg>
+      <div style={{ opacity: dim }}>
+        <Scene3D cam={cam} items={items} />
+      </div>
       {card > 0 && (
         <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", fontFamily: brand.font, opacity: card, transform: `scale(${0.92 + 0.08 * card})` }}>
           <div style={{ fontSize: 30, letterSpacing: 10, color: c.dim, marginTop: -260 }}>MAIS COMO ISSO EM</div>
@@ -428,10 +537,13 @@ export const Outro: React.FC = () => {
 
 export const scenes: Record<string, React.FC> = {
   hook: Hook,
-  peso: Peso,
-  empuxo: Empuxo,
+  abre: Abre,
   linha: Linha,
+  enverga: Enverga,
+  pendural: Pendural,
+  cede: Cede,
+  escoras: Escoras,
   triangulo: Triangulo,
-  tesoura: Tesoura,
+  curioso: Curioso,
   outro: Outro,
 };
