@@ -1,0 +1,15 @@
+{
+  "id": "telhado",
+  "title": "Tesoura de telhado",
+  "voice": "pt-BR-AntonioNeural",
+  "rate": "+8%",
+  "scenes": [
+    { "id": "hook",      "text": "Por que o telhado não esmaga a sua casa?" },
+    { "id": "peso",      "text": "Um telhado de telhas cerâmicas pesa uns cinquenta quilos por metro quadrado. Numa casa comum, são cerca de cinco toneladas lá em cima." },
+    { "id": "empuxo",    "text": "Se você apoiar só duas vigas inclinadas, esse peso não desce reto. Ele empurra as paredes para fora." },
+    { "id": "linha",     "text": "A solução é uma peça horizontal chamada linha. Ela amarra as duas pontas e trabalha esticada, como uma corda." },
+    { "id": "triangulo", "text": "Assim nasce um triângulo. Com juntas articuladas, um quadrado tomba. O triângulo não muda de forma." },
+    { "id": "tesoura",   "text": "Somando triângulos, temos a tesoura. As pernas e as escoras são comprimidas. A linha e o pendural são tracionados." },
+    { "id": "outro",     "text": "Repita isso a cada metro e o peso vai direto para as paredes. Siga para mais blueprints." }
+  ]
+}
