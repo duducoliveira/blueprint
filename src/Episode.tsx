@@ -1,19 +1,12 @@
 import React from "react";
-import { AbsoluteFill, Audio, Easing, interpolate, Sequence, staticFile, useCurrentFrame } from "remotion";
+import { AbsoluteFill, Audio, Sequence, staticFile } from "remotion";
 import { Background } from "./components/Background";
 import { Captions } from "./components/Captions";
 import { Hud } from "./components/Hud";
 import { SceneProvider, Timeline } from "./timeline";
 
-const FADE = 8;
-
-const SceneShell: React.FC<{ duration: number; children: React.ReactNode }> = ({ duration, children }) => {
-  const frame = useCurrentFrame();
-  const o = interpolate(frame, [0, FADE, duration - 4, duration], [0, 1, 1, 0.6], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  // "respiração" de câmera: zoom lento durante a cena
-  const z = interpolate(frame, [0, duration], [1, 1.025], { easing: Easing.inOut(Easing.quad) });
-  return <AbsoluteFill style={{ opacity: o, transform: `scale(${z})` }}>{children}</AbsoluteFill>;
-};
+/** Sem fade e sem zoom por cena: a continuidade vem da câmera, que liga o fim de uma cena ao começo da próxima. */
+const SceneShell: React.FC<{ duration: number; children: React.ReactNode }> = ({ children }) => <AbsoluteFill>{children}</AbsoluteFill>;
 
 /** Monta um episódio: fundo + HUD + cenas em sequência, cada uma com seu áudio e legenda. */
 export const Episode: React.FC<{

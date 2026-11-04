@@ -14,18 +14,19 @@ const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 const ease = Easing.inOut(Easing.cubic);
 const tw = (f: number, a: number, b: number, from = 0, to = 1) => interpolate(f, [a, b], [from, to], { ...clamp, easing: ease });
 
-/** Câmera interpolada entre duas posições ao longo da cena. */
-const camMove = (f: number, dur: number, a: Cam, b: Partial<Cam>): Cam => {
-  const t = tw(f, 0, dur);
-  const m = (x: number, y?: number) => (y === undefined ? x : x + (y - x) * t);
-  return {
-    ...a,
-    yaw: m(a.yaw, b.yaw),
-    pitch: m(a.pitch, b.pitch),
-    zoom: m(a.zoom, b.zoom),
-    target: b.target ? v.lerp(a.target, b.target, t) : a.target,
-  };
+/** Câmera por quadros-chave [frame, câmera]: o fim de uma cena é o começo da próxima (plano contínuo). */
+const camPath = (f: number, keys: [number, Cam][]): Cam => {
+  let i = 0;
+  while (i < keys.length - 2 && f > keys[i + 1][0]) i++;
+  const [f0, a] = keys[i];
+  const [f1, b] = keys[Math.min(i + 1, keys.length - 1)];
+  const t = f1 > f0 ? tw(f, f0, f1) : 1;
+  const m = (x?: number, y?: number, d = 0) => (x ?? d) + ((y ?? d) - (x ?? d)) * t;
+  return { yaw: m(a.yaw, b.yaw), pitch: m(a.pitch, b.pitch), zoom: m(a.zoom, b.zoom), target: v.lerp(a.target, b.target, t), cy: m(a.cy, b.cy, 1000), dist: m(a.dist, b.dist, 40), cx: 540 };
 };
+
+/** Multiplica a opacidade de todos os itens (para transições dentro do plano). */
+const fade = (items: Item[], k: number): Item[] => (k >= 1 ? items : items.map((it) => ({ ...it, st: { ...it.st, opacity: (it.st.opacity ?? 1) * k } })));
 
 /** Setas de carga caindo em loop sobre pontos da tela. */
 const LoadRain: React.FC<{ from: number; pts: { x: number; y: number }[]; color?: string; len?: number }> = ({ from, pts, color = c.accent, len = 110 }) => {
@@ -113,10 +114,12 @@ const longWall = (sgn: number, deg: number, st: Style, cutEnds: boolean): Item[]
   return xform(items, (p) => v.rotZ(p, [x, 0, 0], sgn < 0 ? deg : -deg));
 };
 
-const walls = (deg = 0, st: Style = {}, gables = false): Item[] => {
-  const s = { color: c.line, width: 2, ...st };
-  const out = [...longWall(-1, deg, s, !gables), ...longWall(1, deg, s, !gables)];
-  if (gables) {
+/** `gables` = opacidade das paredes de oitão (frente/fundo) com porta e janela; 0 = casa em corte. */
+const walls = (deg = 0, st: Style = {}, gables = 0): Item[] => {
+  const s0 = { color: c.line, width: 2, ...st };
+  const out = [...longWall(-1, deg, s0, gables < 0.5), ...longWall(1, deg, s0, gables < 0.5)];
+  const s = { ...s0, opacity: (s0.opacity ?? 1) * gables };
+  if (gables > 0) {
     out.push(...box([-HALF, 0, ZH - 2 * WT], [HALF, WH, ZH], s), ...box([-HALF, 0, -ZH], [HALF, WH, -ZH + 2 * WT], s));
     for (const z of [ZH + 0.01, -ZH - 0.01]) out.push(poly([[-HALF, WH, z], [0, WH + RISE, z], [HALF, WH, z]], s));
     out.push(
@@ -213,15 +216,39 @@ const nodePts = (z: number, which: ("L" | "R" | "A" | "M" | "P1" | "P2")[], deg 
   return which.map((k) => v.add(n[k], [0, 0, dz]));
 };
 
-// Câmeras base
-const CAM_HOUSE: Cam = { yaw: -38, pitch: 26, zoom: 64, target: [0, 2.4, 0], cy: 1060 };
-const CAM_FRONT: Cam = { yaw: -16, pitch: 10, zoom: 92, target: [0, 3.4, FRONT], cy: 1000, dist: 30 };
+// ─── Caminho da câmera (contínuo entre as cenas) ────────────────────
+const H = (yaw: number, pitch: number, zoom: number, cy: number): Cam => ({ yaw, pitch, zoom, target: [0, 2.4, 0], cy, dist: 40 });
+const F = (yaw: number, zoom = 92, pitch = 10): Cam => ({ yaw, pitch, zoom, target: [0, 3.4, FRONT], cy: 1000, dist: 30 });
+const CAM = {
+  hook: [H(-38, 26, 60, 1000), H(-30, 22, 66, 1030)],
+  abre: [H(-30, 22, 66, 1030), H(-22, 20, 66, 1060)],
+  linha: [H(-22, 20, 66, 1060), H(-14, 18, 70, 1060)],
+  enverga: [H(-14, 18, 70, 1060), F(-20), F(-14)],
+  pendural: [F(-14), F(-8)],
+  cede: [F(-8), F(-18, 96)],
+  escoras: [F(-18, 96), F(-26, 92)],
+  triangulo: [F(-26, 92), F(-10, 92)],
+  curioso: [F(-10, 92), F(-36, 88)],
+  outro: [F(-36, 88), H(-50, 24, 60, 1060), H(-26, 24, 64, 1060)],
+};
+/** Tesouras do fundo (todas menos a da frente), apagadas. */
+const back = (op: number): Item[] => ZS.slice(0, -1).flatMap((z) => truss(z, 0, { pernas: { ...YEL, opacity: op }, linha: { ...CYA, opacity: op } }));
+/** Fissuras nas paredes compridas. */
+const wallCracks = (deg: number, grow: (i: number) => number, op = 0.95): Item[] =>
+  op <= 0
+    ? []
+    : [-1, 1].flatMap((sgn) =>
+        xform(
+          [3.6, 0.6, -2.4].flatMap((z, i) => (grow(i) > 0 ? crack([sgn * (HALF + WT + 0.01), 0.05, z], [0, 1, 0], [0, 0, 1], (0.9 + i * 0.25) * grow(i), { opacity: op }) : [])),
+          (p) => v.rotZ(p, [sgn * HALF, 0, 0], sgn < 0 ? deg : -deg),
+        ),
+      );
 
 // ─── 1. Gancho ──────────────────────────────────────────────────────
 export const Hook: React.FC = () => {
   const { at, duration } = useScene();
   const f = useCurrentFrame();
-  const cam = camMove(f, duration, { ...CAM_HOUSE, zoom: 60, cy: 1000 }, { yaw: -28, zoom: 66 });
+  const cam = camPath(f, [[0, CAM.hook[0]], [duration, CAM.hook[1]]]);
   const wallsOp = tw(f, 0, 18);
   const roofOp = tw(f, 12, 30);
   const ton = at("toneladas");
@@ -231,7 +258,7 @@ export const Hook: React.FC = () => {
       <Stat label="PESO SOBRE A CASA" value={5} unit="TONELADAS" sub="≈ 50 KG POR M² DE TELHA" from={at("cinco")} dur={16} x={64} y={270} size={170} color={c.accent} />
       <Scene3D
         cam={cam}
-        items={[...site(tw(f, 0, 12)), shadow(0.3 * wallsOp), ...walls(0, { opacity: wallsOp }, true), ...roof(roofOp)]}
+        items={[...site(tw(f, 0, 12)), shadow(0.3 * wallsOp), ...walls(0, { opacity: wallsOp }, 1), ...roof(roofOp)]}
       >
         <Dim3D cam={cam} a={[-HALF - WT, 0, ZH + 0.8]} b={[HALF + WT, 0, ZH + 0.8]} off={[0, 0, 0.7]} label="8,00 m" from={28} />
         <Dim3D cam={cam} a={[-HALF - 0.8, 0, -ZH]} b={[-HALF - 0.8, 0, ZH]} off={[-0.7, 0, 0]} label="10,00 m" from={36} />
@@ -247,7 +274,7 @@ const OPEN = 7;
 export const Abre: React.FC = () => {
   const { at, duration } = useScene();
   const f = useCurrentFrame();
-  const cam = camMove(f, duration, { ...CAM_HOUSE, yaw: -30, pitch: 20, zoom: 66 }, { yaw: -22 });
+  const cam = camPath(f, [[0, CAM.abre[0]], [duration, CAM.abre[1]]]);
   const vi = at("vigas");
   const em = at("empurra");
   const deg = tw(f, em, em + 40, 0, OPEN);
@@ -262,15 +289,8 @@ export const Abre: React.FC = () => {
   const lp = svgPt(nf.L, cam);
   const rp = svgPt(nf.R, cam);
   const ab = at("abrem");
-  const cracks: Item[] =
-    f >= ab
-      ? [-1, 1].flatMap((sgn) =>
-          xform(
-            [3.6, 0.6, -2.4].flatMap((z, i) => crack([sgn * (HALF + WT + 0.01), 0.05, z], [0, 1, 0], [0, 0, 1], (0.9 + i * 0.25) * tw(f, ab + i * 4, ab + 12 + i * 4), { opacity: 0.95 })),
-            (p) => v.rotZ(p, [sgn * HALF, 0, 0], sgn < 0 ? deg : -deg),
-          ),
-        )
-      : [];
+  const cracks = wallCracks(deg, (i) => tw(f, ab + i * 4, ab + 12 + i * 4));
+  const cut = 1 - tw(f, 0, 20); // telhado e oitões saindo: a casa vira corte
   return (
     <AbsoluteFill>
       <Title kicker="PROBLEMA 1" from={em} color={c.danger}>
@@ -278,7 +298,7 @@ export const Abre: React.FC = () => {
         <br />
         ABREM
       </Title>
-      <Scene3D cam={cam} items={[...site(), shadow(), ...walls(deg, wallSt), ...rafters, ...cracks]}>
+      <Scene3D cam={cam} items={[...site(), shadow(), ...walls(deg, wallSt, cut), ...roof(cut), ...rafters, ...cracks]}>
         <RefLine cam={cam} a={[-HALF - WT, 0, ZH]} b={[-HALF - WT, WH + 0.6, ZH]} from={em} />
         <RefLine cam={cam} a={[HALF + WT, 0, ZH]} b={[HALF + WT, WH + 0.6, ZH]} from={em} />
         <Nodes3D cam={cam} pts={[nf.L, nf.R, nf.A].map((p) => v.add(p, [0, 0, SEC.w / 2 + 0.02]))} from={vi + 10} />
@@ -295,10 +315,10 @@ export const Abre: React.FC = () => {
 export const Linha: React.FC = () => {
   const { at, duration } = useScene();
   const f = useCurrentFrame();
-  const cam = camMove(f, duration, { ...CAM_HOUSE, yaw: -22, pitch: 20, zoom: 66 }, { yaw: -12, zoom: 70 });
+  const cam = camPath(f, [[0, CAM.linha[0]], [duration, CAM.linha[1]]]);
   const am = at("amarra");
   const deg = tw(f, am + 14, am + 50, OPEN, 0);
-  const items: Item[] = [...site(), shadow(), ...walls(deg, deg > 0.5 ? { color: c.danger, tint: 0.55 * (deg / OPEN) } : {})];
+  const items: Item[] = [...site(), shadow(), ...walls(deg, deg > 0.5 ? { color: c.danger, tint: 0.55 * (deg / OPEN) } : {}), ...wallCracks(deg, () => 1, 0.95 * (deg / OPEN))];
   ZS.forEach((z, i) => {
     items.push(...truss(z, deg, { pernas: YEL, linha: CYA, grow: { linha: tw(f, am + i * 3, am + 16 + i * 3) } }));
   });
@@ -329,11 +349,11 @@ const ForroLoad: React.FC<{ from: number; cam: Cam; sag: number }> = ({ from, ca
 export const Enverga: React.FC = () => {
   const { at, duration } = useScene();
   const f = useCurrentFrame();
-  const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -24 }, { yaw: -14 });
+  const cam = camPath(f, [[0, CAM.enverga[0]], [34, CAM.enverga[1]], [duration, CAM.enverga[2]]]);
   const env = at("enverga");
   const sag = tw(f, env - 6, env + 26, 0, 0.55);
-  const items: Item[] = [...site(), ...walls(0, { opacity: 0.6 })];
-  ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 } })));
+  const k = tw(f, 0, 30); // transição da casa inteira para o close da tesoura da frente
+  const items: Item[] = [...site(), shadow(0.28 * (1 - k)), ...walls(0, { opacity: 1 - 0.4 * k }), ...back(1 - 0.86 * k)];
   items.push(...truss(FRONT, 0, { pernas: YEL, linha: sag > 0.05 ? RED : CYA, sagLinha: sag, plates: 1 }));
   const n = nodes(FRONT);
   return (
@@ -358,12 +378,12 @@ export const Enverga: React.FC = () => {
 export const Pendural: React.FC = () => {
   const { at, duration } = useScene();
   const f = useCurrentFrame();
-  const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -14 }, { yaw: -8 });
+  const cam = camPath(f, [[0, CAM.pendural[0]], [duration, CAM.pendural[1]]]);
   const pe = at("pendura");
   const g = tw(f, pe, pe + 22);
   const sag = tw(f, pe + 14, pe + 34, 0.55, 0);
   const items: Item[] = [...site(), ...walls(0, { opacity: 0.6 })];
-  ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 } })));
+  items.push(...back(0.14));
   items.push(...truss(FRONT, 0, { pernas: YEL, linha: sag > 0.05 ? RED : CYA, sagLinha: sag, pendural: CYA, grow: { pendural: g }, plates: 1 }));
   const n = nodes(FRONT);
   return (
@@ -384,11 +404,11 @@ export const Pendural: React.FC = () => {
 export const Cede: React.FC = () => {
   const { at, duration } = useScene();
   const f = useCurrentFrame();
-  const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -8 }, { yaw: -18, zoom: 96 });
+  const cam = camPath(f, [[0, CAM.cede[0]], [duration, CAM.cede[1]]]);
   const ce = at("cede");
   const sag = tw(f, ce - 10, ce + 22, 0, 0.42);
   const items: Item[] = [...site(), ...walls(0, { opacity: 0.6 })];
-  ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 } })));
+  items.push(...back(0.14));
   items.push(...truss(FRONT, 0, { pernas: sag > 0.05 ? RED : YEL, linha: CYA, pendural: CYA, sagPerna: sag, plates: 1 }));
   const tel = at("telhas");
   const pts = [0.25, 0.5, 0.75].flatMap((t) => {
@@ -417,13 +437,13 @@ export const Cede: React.FC = () => {
 export const Escoras: React.FC = () => {
   const { at, duration } = useScene();
   const f = useCurrentFrame();
-  const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -18, zoom: 96 }, { yaw: -26, zoom: 92 });
+  const cam = camPath(f, [[0, CAM.escoras[0]], [duration, CAM.escoras[1]]]);
   const es = at("escoras");
   const ap = at("apoia");
   const g = tw(f, ap, ap + 24);
   const sag = tw(f, ap + 14, ap + 36, 0.42, 0);
   const items: Item[] = [...site(), ...walls(0, { opacity: 0.6 })];
-  ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 } })));
+  items.push(...back(0.14));
   items.push(...truss(FRONT, 0, { pernas: sag > 0.05 ? RED : YEL, linha: CYA, pendural: CYA, escoras: YEL, sagPerna: sag, grow: { escoras: g }, plates: 1 }));
   const n = nodes(FRONT);
   return (
@@ -447,14 +467,14 @@ export const Triangulo: React.FC = () => {
   const qd = at("quadrado");
   const tb = at("tomba");
   const t2 = at("triangulo", 2);
-  const swap = tw(f, qd - 10, qd + 4);
+  // troca para o quadrado x triângulo e, no fim, volta para a tesoura (sem corte)
+  const swap = tw(f, qd - 10, qd + 4) * (1 - tw(f, duration - 16, duration - 2));
   // parte A: a tesoura acende seus 4 triângulos
-  const camA = camMove(f, qd, { ...CAM_FRONT, yaw: -10, zoom: 92 }, { yaw: -4 });
+  const camA = camPath(f, [[0, CAM.triangulo[0]], [duration, CAM.triangulo[1]]]);
   const n = nodes(FRONT);
   const tri = (pts: V3[], i: number): Item => poly(pts.map((p) => v.add(p, [0, 0, 0.02])), { color: c.accent, fill: 0.35 * tw(f, tr + i * 4, tr + 8 + i * 4) * (1 - swap), tint: 1, width: 0 }, 0.2);
   const itemsA: Item[] = [
-    ...groundGrid(9, 1, { opacity: 1 - swap }),
-    ...truss(FRONT, 0, { pernas: YEL, linha: CYA, pendural: CYA, escoras: YEL, plates: 1 }).map((it) => ({ ...it, st: { ...it.st, opacity: 1 - swap } })),
+    ...fade([...site(), ...walls(0, { opacity: 0.6 }), ...back(0.14), ...truss(FRONT, 0, { pernas: YEL, linha: CYA, pendural: CYA, escoras: YEL, plates: 1 })], 1 - swap),
     tri([n.L, n.P1, n.M], 0),
     tri([n.P1, n.A, n.M], 1),
     tri([n.A, n.P2, n.M], 2),
@@ -495,7 +515,11 @@ export const Triangulo: React.FC = () => {
         <br />
         <span style={{ color: c.accent }}>TRIÂNGULOS</span>
       </Title>
-      {swap < 1 && <Scene3D cam={camA} items={itemsA} />}
+      {swap < 1 && (
+        <Scene3D cam={camA} items={itemsA}>
+          <Nodes3D cam={camA} pts={nodePts(FRONT, ["L", "R", "A", "M", "P1", "P2"])} opacity={1 - swap} />
+        </Scene3D>
+      )}
       {swap > 0 && (
         <Scene3D cam={camB} items={itemsB}>
           <g opacity={swap}>
@@ -510,12 +534,14 @@ export const Triangulo: React.FC = () => {
           <Arrow from={[pB(T3).x - 170, pB(T3).y]} to={[pB(T3).x - 20, pB(T3).y]} start={t2 - 6} dur={8} color={c.danger} width={7} head={24} />
         </Scene3D>
       )}
+      <div style={{ opacity: swap }}>
       <Reveal from={tb + 16} style={{ top: 1300, left: 60, width: 440, textAlign: "center", fontSize: 34, fontWeight: 800, letterSpacing: 4, color: c.danger }}>
         ✕ TOMBA
       </Reveal>
       <Reveal from={t2 + 10} style={{ top: 1300, left: 560, width: 440, textAlign: "center", fontSize: 34, fontWeight: 800, letterSpacing: 4, color: c.accent }}>
         ✓ RÍGIDO
       </Reveal>
+      </div>
     </AbsoluteFill>
   );
 };
@@ -524,12 +550,15 @@ export const Triangulo: React.FC = () => {
 export const Curioso: React.FC = () => {
   const { at, duration } = useScene();
   const f = useCurrentFrame();
-  const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -42, pitch: 16, zoom: 88 }, { yaw: -12, zoom: 92 });
+  const cam = camPath(f, [[0, CAM.curioso[0]], [duration, CAM.curioso[1]]]);
   const es = at("esmagadas");
   const pu = at("puxadas");
   const items: Item[] = [...site(), ...walls(0, { opacity: 0.6 })];
-  ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 }, pendural: { ...WOOD, opacity: 0.14 }, escoras: { ...WOOD, opacity: 0.14 } })));
-  items.push(...truss(FRONT, 0, { pernas: f >= es ? YEL : WOOD, escoras: f >= es ? YEL : WOOD, linha: f >= pu ? CYA : WOOD, pendural: f >= pu ? CYA : WOOD, plates: 1 }));
+  items.push(...back(0.14));
+  // as cores já vêm da cena anterior; aqui cada grupo "acende" (brilho) quando é citado
+  const gy = f >= es ? { ...YEL, glow: true } : YEL;
+  const gc = f >= pu ? { ...CYA, glow: true } : CYA;
+  items.push(...truss(FRONT, 0, { pernas: gy, escoras: gy, linha: gc, pendural: gc, plates: 1 }));
   const n = nodes(FRONT);
   // setinhas: compressão →← (apontam para o meio da peça), tração ←→ (apontam para fora)
   const pair = (a: V3, b: V3, inward: boolean, from: number, color: string, k: number) => {
@@ -584,17 +613,21 @@ export const Curioso: React.FC = () => {
 export const Outro: React.FC = () => {
   const { at, duration } = useScene();
   const f = useCurrentFrame();
-  const cam = camMove(f, duration, { ...CAM_HOUSE, yaw: -58, pitch: 24, zoom: 60 }, { yaw: -24, zoom: 64 });
+  const cam = camPath(f, [[0, CAM.outro[0]], [44, CAM.outro[1]], [duration, CAM.outro[2]]]);
   const rp = at("repita");
   const te = at("telhas");
   const pb = at("parabens");
   const sg = at("sabia", 1);
   const sg2 = at("sabia", 2);
-  const items: Item[] = [...site(), shadow(), ...walls(0, {}, false)];
+  const items: Item[] = [...site(), shadow(0.28 * tw(f, 0, 40)), ...walls(0, { opacity: tw(f, 0, 40, 0.6, 1) })];
   ZS.forEach((z, i) => {
-    const g = tw(f, rp + i * 4, rp + 14 + i * 4);
-    if (g <= 0) return;
-    items.push(...truss(z, 0, { pernas: { ...YEL, opacity: g }, linha: { ...CYA, opacity: g }, pendural: { ...CYA, opacity: g }, escoras: { ...YEL, opacity: g }, plates: g }));
+    if (i === ZS.length - 1) {
+      items.push(...truss(z, 0, { pernas: YEL, linha: CYA, pendural: CYA, escoras: YEL, plates: 1 }));
+      return;
+    }
+    const g = tw(f, rp + 6 + (ZS.length - 2 - i) * 4, rp + 20 + (ZS.length - 2 - i) * 4); // da frente para o fundo
+    const o = 0.14 + 0.86 * g;
+    items.push(...truss(z, 0, { pernas: { ...YEL, opacity: o }, linha: { ...CYA, opacity: o }, pendural: { ...CYA, opacity: g }, escoras: { ...YEL, opacity: g }, grow: { pendural: g, escoras: g }, plates: g }));
   });
   // cumeeira e terças
   const tg = tw(f, rp + 40, rp + 60);
