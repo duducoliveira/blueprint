@@ -5,996 +5,1031 @@
  "scenes": [
   {
    "id": "hook",
-   "text": "Coloque cinco toneladas de telha em cima da sua casa. Por que ela não desaba?",
+   "text": "Você precisa segurar cinco toneladas de telha em cima de uma casa.",
    "audio": "episodes/telhado/hook.mp3",
    "audioDelay": 0.25,
-   "durationInFrames": 203,
+   "durationInFrames": 155,
    "words": [
     {
-     "text": "Coloque",
-     "start": 0.347,
-     "end": 0.842
+     "text": "Você",
+     "start": 0.346,
+     "end": 0.636
+    },
+    {
+     "text": "precisa",
+     "start": 0.647,
+     "end": 1.029
+    },
+    {
+     "text": "segurar",
+     "start": 1.041,
+     "end": 1.492
     },
     {
      "text": "cinco",
-     "start": 0.854,
-     "end": 1.184
+     "start": 1.504,
+     "end": 1.874
     },
     {
      "text": "toneladas",
-     "start": 1.196,
-     "end": 1.774
+     "start": 1.886,
+     "end": 2.418
     },
     {
      "text": "de",
-     "start": 1.786,
-     "end": 1.904
+     "start": 2.43,
+     "end": 2.545
     },
     {
      "text": "telha",
-     "start": 1.916,
-     "end": 2.14
+     "start": 2.557,
+     "end": 2.742
     },
     {
      "text": "em",
-     "start": 2.151,
-     "end": 2.234
+     "start": 2.754,
+     "end": 2.846
     },
     {
      "text": "cima",
-     "start": 2.246,
-     "end": 2.588
+     "start": 2.858,
+     "end": 3.17
     },
     {
-     "text": "da",
-     "start": 2.6,
-     "end": 2.682
+     "text": "de",
+     "start": 3.182,
+     "end": 3.263
     },
     {
-     "text": "sua",
-     "start": 2.694,
-     "end": 2.93
+     "text": "uma",
+     "start": 3.275,
+     "end": 3.437
     },
     {
      "text": "casa.",
-     "start": 2.942,
-     "end": 3.319
-    },
-    {
-     "text": "Por",
-     "start": 4.13,
-     "end": 4.307
-    },
-    {
-     "text": "que",
-     "start": 4.318,
-     "end": 4.495
-    },
-    {
-     "text": "ela",
-     "start": 4.507,
-     "end": 4.731
-    },
-    {
-     "text": "não",
-     "start": 4.743,
-     "end": 4.884
-    },
-    {
-     "text": "desaba?",
-     "start": 4.896,
-     "end": 5.368
+     "start": 3.448,
+     "end": 3.807
     }
    ]
   },
   {
    "id": "abre",
-   "text": "Apoie tudo em vigas inclinadas, e o peso não desce reto. Ele empurra as paredes para fora, até elas abrirem.",
+   "text": "Então você apoia vigas inclinadas nas paredes. Essas são as pernas. Mas o peso empurra as pontas para fora, e as paredes abrem.",
    "audio": "episodes/telhado/abre.mp3",
    "audioDelay": 0.25,
-   "durationInFrames": 259,
+   "durationInFrames": 316,
    "words": [
     {
-     "text": "Apoie",
-     "start": 0.347,
-     "end": 0.819
+     "text": "Então",
+     "start": 0.346,
+     "end": 0.717
     },
     {
-     "text": "tudo",
-     "start": 0.831,
-     "end": 1.043
+     "text": "você",
+     "start": 0.728,
+     "end": 0.948
     },
     {
-     "text": "em",
-     "start": 1.055,
-     "end": 1.125
+     "text": "apoia",
+     "start": 0.96,
+     "end": 1.318
     },
     {
      "text": "vigas",
-     "start": 1.137,
-     "end": 1.397
+     "start": 1.33,
+     "end": 1.585
     },
     {
-     "text": "inclinadas,",
-     "start": 1.409,
-     "end": 2.116
+     "text": "inclinadas",
+     "start": 1.596,
+     "end": 2.221
     },
     {
-     "text": "e",
-     "start": 2.352,
-     "end": 2.423
+     "text": "nas",
+     "start": 2.233,
+     "end": 2.383
     },
     {
-     "text": "o",
-     "start": 2.434,
-     "end": 2.505
+     "text": "paredes.",
+     "start": 2.395,
+     "end": 3.008
     },
     {
-     "text": "peso",
-     "start": 2.517,
-     "end": 2.835
+     "text": "Essas",
+     "start": 3.803,
+     "end": 4.174
     },
     {
-     "text": "não",
-     "start": 2.847,
-     "end": 3.012
-    },
-    {
-     "text": "desce",
-     "start": 3.024,
-     "end": 3.295
-    },
-    {
-     "text": "reto.",
-     "start": 3.307,
-     "end": 3.708
-    },
-    {
-     "text": "Ele",
-     "start": 4.519,
-     "end": 4.684
-    },
-    {
-     "text": "empurra",
-     "start": 4.696,
-     "end": 5.085
+     "text": "são",
+     "start": 4.185,
+     "end": 4.347
     },
     {
      "text": "as",
-     "start": 5.097,
-     "end": 5.191
+     "start": 4.359,
+     "end": 4.486
     },
     {
-     "text": "paredes",
-     "start": 5.203,
-     "end": 5.604
+     "text": "pernas.",
+     "start": 4.498,
+     "end": 4.995
+    },
+    {
+     "text": "Mas",
+     "start": 5.794,
+     "end": 5.991
+    },
+    {
+     "text": "o",
+     "start": 6.002,
+     "end": 6.153
+    },
+    {
+     "text": "peso",
+     "start": 6.164,
+     "end": 6.431
+    },
+    {
+     "text": "empurra",
+     "start": 6.442,
+     "end": 6.836
+    },
+    {
+     "text": "as",
+     "start": 6.847,
+     "end": 6.963
+    },
+    {
+     "text": "pontas",
+     "start": 6.975,
+     "end": 7.356
     },
     {
      "text": "para",
-     "start": 5.616,
-     "end": 5.804
+     "start": 7.368,
+     "end": 7.553
     },
     {
      "text": "fora,",
-     "start": 5.816,
-     "end": 6.158
+     "start": 7.565,
+     "end": 7.924
     },
     {
-     "text": "até",
-     "start": 6.311,
-     "end": 6.571
+     "text": "e",
+     "start": 8.155,
+     "end": 8.236
     },
     {
-     "text": "elas",
-     "start": 6.583,
-     "end": 6.736
+     "text": "as",
+     "start": 8.248,
+     "end": 8.387
     },
     {
-     "text": "abrirem.",
-     "start": 6.748,
-     "end": 7.243
+     "text": "paredes",
+     "start": 8.398,
+     "end": 8.78
+    },
+    {
+     "text": "abrem.",
+     "start": 8.792,
+     "end": 9.197
     }
    ]
   },
   {
    "id": "linha",
-   "text": "Solução: amarre as duas pontas com uma viga deitada, a linha. Ela segura as paredes como uma corda esticada.",
+   "text": "Então você amarra as duas pontas com uma viga deitada, que segura tudo como uma corda. Essa é a linha.",
    "audio": "episodes/telhado/linha.mp3",
    "audioDelay": 0.25,
-   "durationInFrames": 261,
+   "durationInFrames": 238,
    "words": [
     {
-     "text": "Solução:",
-     "start": 0.347,
-     "end": 0.972
+     "text": "Então",
+     "start": 0.346,
+     "end": 0.67
     },
     {
-     "text": "amarre",
-     "start": 1.22,
-     "end": 1.597
+     "text": "você",
+     "start": 0.682,
+     "end": 0.937
+    },
+    {
+     "text": "amarra",
+     "start": 0.948,
+     "end": 1.295
     },
     {
      "text": "as",
-     "start": 1.609,
-     "end": 1.715
+     "start": 1.307,
+     "end": 1.388
     },
     {
      "text": "duas",
-     "start": 1.727,
-     "end": 2.033
+     "start": 1.4,
+     "end": 1.7
     },
     {
      "text": "pontas",
-     "start": 2.045,
-     "end": 2.446
+     "start": 1.712,
+     "end": 2.082
     },
     {
      "text": "com",
-     "start": 2.458,
-     "end": 2.623
+     "start": 2.094,
+     "end": 2.221
     },
     {
      "text": "uma",
-     "start": 2.635,
-     "end": 2.776
+     "start": 2.233,
+     "end": 2.372
     },
     {
      "text": "viga",
-     "start": 2.788,
-     "end": 3.036
+     "start": 2.383,
+     "end": 2.603
     },
     {
      "text": "deitada,",
-     "start": 3.048,
-     "end": 3.519
+     "start": 2.615,
+     "end": 3.089
     },
     {
-     "text": "a",
-     "start": 3.696,
-     "end": 3.767
-    },
-    {
-     "text": "linha.",
-     "start": 3.779,
-     "end": 4.133
-    },
-    {
-     "text": "Ela",
-     "start": 4.943,
-     "end": 5.179
+     "text": "que",
+     "start": 3.321,
+     "end": 3.437
     },
     {
      "text": "segura",
-     "start": 5.191,
-     "end": 5.568
+     "start": 3.448,
+     "end": 3.876
     },
     {
-     "text": "as",
-     "start": 5.58,
-     "end": 5.675
-    },
-    {
-     "text": "paredes",
-     "start": 5.686,
-     "end": 6.111
+     "text": "tudo",
+     "start": 3.888,
+     "end": 4.143
     },
     {
      "text": "como",
-     "start": 6.123,
-     "end": 6.311
+     "start": 4.154,
+     "end": 4.362
     },
     {
      "text": "uma",
-     "start": 6.323,
-     "end": 6.5
+     "start": 4.374,
+     "end": 4.548
     },
     {
-     "text": "corda",
-     "start": 6.512,
-     "end": 6.795
+     "text": "corda.",
+     "start": 4.559,
+     "end": 4.918
     },
     {
-     "text": "esticada.",
-     "start": 6.807,
-     "end": 7.325
+     "text": "Essa",
+     "start": 5.713,
+     "end": 6.049
+    },
+    {
+     "text": "é",
+     "start": 6.06,
+     "end": 6.141
+    },
+    {
+     "text": "a",
+     "start": 6.153,
+     "end": 6.176
+    },
+    {
+     "text": "linha.",
+     "start": 6.188,
+     "end": 6.558
     }
    ]
   },
   {
    "id": "enverga",
-   "text": "Só que a linha é longa. Com o forro pendurado, ela começa a envergar no meio.",
+   "text": "Mas a linha é comprida. Com o forro pendurado nela, ela enverga no meio.",
    "audio": "episodes/telhado/enverga.mp3",
    "audioDelay": 0.25,
-   "durationInFrames": 200,
+   "durationInFrames": 190,
    "words": [
     {
-     "text": "Só",
-     "start": 0.347,
-     "end": 0.642
-    },
-    {
-     "text": "que",
-     "start": 0.654,
-     "end": 0.748
+     "text": "Mas",
+     "start": 0.346,
+     "end": 0.52
     },
     {
      "text": "a",
-     "start": 0.76,
-     "end": 0.795
+     "start": 0.531,
+     "end": 0.659
     },
     {
      "text": "linha",
-     "start": 0.807,
-     "end": 1.055
+     "start": 0.67,
+     "end": 0.879
     },
     {
      "text": "é",
-     "start": 1.067,
-     "end": 1.114
+     "start": 0.89,
+     "end": 0.937
     },
     {
-     "text": "longa.",
-     "start": 1.125,
-     "end": 1.55
+     "text": "comprida.",
+     "start": 0.948,
+     "end": 1.481
     },
     {
      "text": "Com",
-     "start": 2.361,
-     "end": 2.597
+     "start": 2.275,
+     "end": 2.495
     },
     {
      "text": "o",
-     "start": 2.608,
-     "end": 2.632
+     "start": 2.507,
+     "end": 2.53
     },
     {
      "text": "forro",
-     "start": 2.644,
-     "end": 2.962
+     "start": 2.542,
+     "end": 2.924
     },
     {
-     "text": "pendurado,",
-     "start": 2.974,
-     "end": 3.552
+     "text": "pendurado",
+     "start": 2.935,
+     "end": 3.387
+    },
+    {
+     "text": "nela,",
+     "start": 3.398,
+     "end": 3.745
     },
     {
      "text": "ela",
-     "start": 3.741,
-     "end": 3.917
+     "start": 3.942,
+     "end": 4.069
     },
     {
-     "text": "começa",
-     "start": 3.929,
-     "end": 4.354
-    },
-    {
-     "text": "a",
-     "start": 4.366,
-     "end": 4.377
-    },
-    {
-     "text": "envergar",
-     "start": 4.389,
-     "end": 4.861
+     "text": "enverga",
+     "start": 4.081,
+     "end": 4.521
     },
     {
      "text": "no",
-     "start": 4.873,
-     "end": 4.967
+     "start": 4.532,
+     "end": 4.625
     },
     {
      "text": "meio.",
-     "start": 4.979,
-     "end": 5.274
+     "start": 4.637,
+     "end": 4.961
     }
    ]
   },
   {
    "id": "pendural",
-   "text": "Então pendure a linha lá no topo, com uma peça vertical: o pendural.",
+   "text": "Então você pendura o meio dela lá no topo, com uma peça em pé. Esse é o pendural.",
    "audio": "episodes/telhado/pendural.mp3",
    "audioDelay": 0.25,
-   "durationInFrames": 177,
+   "durationInFrames": 210,
    "words": [
     {
      "text": "Então",
-     "start": 0.347,
-     "end": 0.736
+     "start": 0.346,
+     "end": 0.693
     },
     {
-     "text": "pendure",
-     "start": 0.748,
-     "end": 1.125
+     "text": "você",
+     "start": 0.705,
+     "end": 0.948
     },
     {
-     "text": "a",
-     "start": 1.137,
-     "end": 1.173
-    },
-    {
-     "text": "linha",
-     "start": 1.184,
-     "end": 1.444
-    },
-    {
-     "text": "lá",
-     "start": 1.456,
-     "end": 1.585
-    },
-    {
-     "text": "no",
-     "start": 1.597,
-     "end": 1.715
-    },
-    {
-     "text": "topo,",
-     "start": 1.727,
-     "end": 2.081
-    },
-    {
-     "text": "com",
-     "start": 2.411,
-     "end": 2.541
-    },
-    {
-     "text": "uma",
-     "start": 2.552,
-     "end": 2.706
-    },
-    {
-     "text": "peça",
-     "start": 2.717,
-     "end": 3.024
-    },
-    {
-     "text": "vertical:",
-     "start": 3.036,
-     "end": 3.555
+     "text": "pendura",
+     "start": 0.96,
+     "end": 1.342
     },
     {
      "text": "o",
-     "start": 3.861,
-     "end": 3.967
+     "start": 1.353,
+     "end": 1.388
+    },
+    {
+     "text": "meio",
+     "start": 1.4,
+     "end": 1.643
+    },
+    {
+     "text": "dela",
+     "start": 1.654,
+     "end": 1.897
+    },
+    {
+     "text": "lá",
+     "start": 1.909,
+     "end": 2.082
+    },
+    {
+     "text": "no",
+     "start": 2.094,
+     "end": 2.221
+    },
+    {
+     "text": "topo,",
+     "start": 2.233,
+     "end": 2.569
+    },
+    {
+     "text": "com",
+     "start": 2.846,
+     "end": 2.974
+    },
+    {
+     "text": "uma",
+     "start": 2.985,
+     "end": 3.159
+    },
+    {
+     "text": "peça",
+     "start": 3.17,
+     "end": 3.471
+    },
+    {
+     "text": "em",
+     "start": 3.483,
+     "end": 3.587
+    },
+    {
+     "text": "pé.",
+     "start": 3.599,
+     "end": 3.842
+    },
+    {
+     "text": "Esse",
+     "start": 4.637,
+     "end": 4.961
+    },
+    {
+     "text": "é",
+     "start": 4.972,
+     "end": 5.018
+    },
+    {
+     "text": "o",
+     "start": 5.03,
+     "end": 5.076
     },
     {
      "text": "pendural.",
-     "start": 3.979,
-     "end": 4.545
+     "start": 5.088,
+     "end": 5.655
     }
    ]
   },
   {
    "id": "cede",
-   "text": "Mas as pernas também são longas. Com o peso das telhas, cada uma começa a ceder.",
+   "text": "Mas as pernas também são compridas. Com o peso das telhas, cada uma cede.",
    "audio": "episodes/telhado/cede.mp3",
    "audioDelay": 0.25,
-   "durationInFrames": 213,
+   "durationInFrames": 202,
    "words": [
     {
      "text": "Mas",
-     "start": 0.347,
-     "end": 0.536
+     "start": 0.346,
+     "end": 0.531
     },
     {
      "text": "as",
-     "start": 0.548,
-     "end": 0.76
+     "start": 0.543,
+     "end": 0.751
     },
     {
      "text": "pernas",
-     "start": 0.772,
-     "end": 1.173
+     "start": 0.763,
+     "end": 1.133
     },
     {
      "text": "também",
-     "start": 1.184,
-     "end": 1.526
+     "start": 1.145,
+     "end": 1.492
     },
     {
      "text": "são",
-     "start": 1.538,
-     "end": 1.762
+     "start": 1.504,
+     "end": 1.677
     },
     {
-     "text": "longas.",
-     "start": 1.774,
-     "end": 2.269
+     "text": "compridas.",
+     "start": 1.689,
+     "end": 2.337
     },
     {
      "text": "Com",
-     "start": 3.08,
-     "end": 3.269
+     "start": 3.132,
+     "end": 3.317
     },
     {
      "text": "o",
-     "start": 3.281,
-     "end": 3.328
+     "start": 3.329,
+     "end": 3.375
     },
     {
      "text": "peso",
-     "start": 3.34,
-     "end": 3.623
+     "start": 3.387,
+     "end": 3.687
     },
     {
      "text": "das",
-     "start": 3.634,
-     "end": 3.823
+     "start": 3.699,
+     "end": 3.884
     },
     {
      "text": "telhas,",
-     "start": 3.835,
-     "end": 4.248
+     "start": 3.896,
+     "end": 4.289
     },
     {
      "text": "cada",
-     "start": 4.46,
-     "end": 4.696
+     "start": 4.475,
+     "end": 4.718
     },
     {
      "text": "uma",
-     "start": 4.708,
-     "end": 4.873
+     "start": 4.729,
+     "end": 4.937
     },
     {
-     "text": "começa",
-     "start": 4.884,
-     "end": 5.297
-    },
-    {
-     "text": "a",
-     "start": 5.309,
-     "end": 5.333
-    },
-    {
-     "text": "ceder.",
-     "start": 5.344,
-     "end": 5.71
+     "text": "cede.",
+     "start": 4.949,
+     "end": 5.377
     }
    ]
   },
   {
    "id": "escoras",
-   "text": "A resposta são as escoras. Elas apoiam o meio de cada perna no pé do pendural.",
+   "text": "Então você apoia o meio de cada perna no pé do pendural, com duas peças na diagonal. Essas são as escoras.",
    "audio": "episodes/telhado/escoras.mp3",
    "audioDelay": 0.25,
-   "durationInFrames": 205,
+   "durationInFrames": 254,
    "words": [
     {
-     "text": "A",
-     "start": 0.347,
-     "end": 0.441
+     "text": "Então",
+     "start": 0.346,
+     "end": 0.717
     },
     {
-     "text": "resposta",
-     "start": 0.453,
-     "end": 1.043
+     "text": "você",
+     "start": 0.728,
+     "end": 0.983
     },
     {
-     "text": "são",
-     "start": 1.055,
-     "end": 1.255
-    },
-    {
-     "text": "as",
-     "start": 1.267,
-     "end": 1.314
-    },
-    {
-     "text": "escoras.",
-     "start": 1.326,
-     "end": 1.975
-    },
-    {
-     "text": "Elas",
-     "start": 2.785,
-     "end": 3.021
-    },
-    {
-     "text": "apoiam",
-     "start": 3.033,
-     "end": 3.469
+     "text": "apoia",
+     "start": 0.994,
+     "end": 1.319
     },
     {
      "text": "o",
-     "start": 3.481,
-     "end": 3.505
+     "start": 1.33,
+     "end": 1.365
     },
     {
      "text": "meio",
-     "start": 3.517,
-     "end": 3.764
+     "start": 1.376,
+     "end": 1.596
     },
     {
      "text": "de",
-     "start": 3.776,
-     "end": 3.882
+     "start": 1.608,
+     "end": 1.712
     },
     {
      "text": "cada",
-     "start": 3.894,
-     "end": 4.142
+     "start": 1.724,
+     "end": 1.967
     },
     {
      "text": "perna",
-     "start": 4.153,
-     "end": 4.483
+     "start": 1.978,
+     "end": 2.302
     },
     {
      "text": "no",
-     "start": 4.495,
-     "end": 4.613
+     "start": 2.314,
+     "end": 2.441
     },
     {
      "text": "pé",
-     "start": 4.625,
-     "end": 4.802
+     "start": 2.453,
+     "end": 2.638
     },
     {
      "text": "do",
-     "start": 4.814,
-     "end": 4.92
+     "start": 2.65,
+     "end": 2.765
     },
     {
-     "text": "pendural.",
-     "start": 4.932,
-     "end": 5.45
+     "text": "pendural,",
+     "start": 2.777,
+     "end": 3.263
+    },
+    {
+     "text": "com",
+     "start": 3.552,
+     "end": 3.737
+    },
+    {
+     "text": "duas",
+     "start": 3.749,
+     "end": 4.108
+    },
+    {
+     "text": "peças",
+     "start": 4.119,
+     "end": 4.444
+    },
+    {
+     "text": "na",
+     "start": 4.455,
+     "end": 4.548
+    },
+    {
+     "text": "diagonal.",
+     "start": 4.559,
+     "end": 5.034
+    },
+    {
+     "text": "Essas",
+     "start": 5.829,
+     "end": 6.211
+    },
+    {
+     "text": "são",
+     "start": 6.222,
+     "end": 6.384
+    },
+    {
+     "text": "as",
+     "start": 6.396,
+     "end": 6.431
+    },
+    {
+     "text": "escoras.",
+     "start": 6.442,
+     "end": 7.102
     }
    ]
   },
   {
    "id": "triangulo",
-   "text": "Repare: a tesoura virou só triângulos. Um quadrado articulado tomba com um empurrão. O triângulo não muda de forma.",
+   "text": "Repare: virou um monte de triângulos. Empurre um quadrado articulado, e ele tomba. Empurre um triângulo, e ele nem se mexe.",
    "audio": "episodes/telhado/triangulo.mp3",
    "audioDelay": 0.25,
-   "durationInFrames": 297,
+   "durationInFrames": 318,
    "words": [
     {
      "text": "Repare:",
-     "start": 0.347,
-     "end": 0.913
-    },
-    {
-     "text": "a",
-     "start": 1.125,
-     "end": 1.184
-    },
-    {
-     "text": "tesoura",
-     "start": 1.196,
-     "end": 1.644
+     "start": 0.346,
+     "end": 0.844
     },
     {
      "text": "virou",
-     "start": 1.656,
-     "end": 1.916
-    },
-    {
-     "text": "só",
-     "start": 1.927,
-     "end": 2.151
-    },
-    {
-     "text": "triângulos.",
-     "start": 2.163,
-     "end": 2.871
-    },
-    {
-     "text": "Um",
-     "start": 3.682,
-     "end": 3.823
-    },
-    {
-     "text": "quadrado",
-     "start": 3.835,
-     "end": 4.295
-    },
-    {
-     "text": "articulado",
-     "start": 4.307,
-     "end": 4.908
-    },
-    {
-     "text": "tomba",
-     "start": 4.92,
-     "end": 5.262
-    },
-    {
-     "text": "com",
-     "start": 5.274,
-     "end": 5.439
+     "start": 1.18,
+     "end": 1.423
     },
     {
      "text": "um",
-     "start": 5.45,
-     "end": 5.521
+     "start": 1.434,
+     "end": 1.527
     },
     {
-     "text": "empurrão.",
-     "start": 5.533,
-     "end": 6.017
-    },
-    {
-     "text": "O",
-     "start": 6.83,
-     "end": 6.936
-    },
-    {
-     "text": "triângulo",
-     "start": 6.948,
-     "end": 7.455
-    },
-    {
-     "text": "não",
-     "start": 7.467,
-     "end": 7.644
-    },
-    {
-     "text": "muda",
-     "start": 7.656,
-     "end": 7.939
+     "text": "monte",
+     "start": 1.538,
+     "end": 1.886
     },
     {
      "text": "de",
-     "start": 7.95,
-     "end": 8.057
+     "start": 1.897,
+     "end": 1.99
     },
     {
-     "text": "forma.",
-     "start": 8.068,
-     "end": 8.517
+     "text": "triângulos.",
+     "start": 2.001,
+     "end": 2.626
+    },
+    {
+     "text": "Empurre",
+     "start": 3.421,
+     "end": 3.919
+    },
+    {
+     "text": "um",
+     "start": 3.931,
+     "end": 4.012
+    },
+    {
+     "text": "quadrado",
+     "start": 4.023,
+     "end": 4.451
+    },
+    {
+     "text": "articulado,",
+     "start": 4.463,
+     "end": 5.111
+    },
+    {
+     "text": "e",
+     "start": 5.343,
+     "end": 5.458
+    },
+    {
+     "text": "ele",
+     "start": 5.47,
+     "end": 5.655
+    },
+    {
+     "text": "tomba.",
+     "start": 5.667,
+     "end": 6.014
+    },
+    {
+     "text": "Empurre",
+     "start": 6.812,
+     "end": 7.31
+    },
+    {
+     "text": "um",
+     "start": 7.322,
+     "end": 7.391
+    },
+    {
+     "text": "triângulo,",
+     "start": 7.403,
+     "end": 7.889
+    },
+    {
+     "text": "e",
+     "start": 8.086,
+     "end": 8.201
+    },
+    {
+     "text": "ele",
+     "start": 8.213,
+     "end": 8.375
+    },
+    {
+     "text": "nem",
+     "start": 8.387,
+     "end": 8.653
+    },
+    {
+     "text": "se",
+     "start": 8.664,
+     "end": 8.792
+    },
+    {
+     "text": "mexe.",
+     "start": 8.803,
+     "end": 9.22
     }
    ]
   },
   {
    "id": "curioso",
-   "text": "E aqui está a parte mais curiosa. As peças quase não dobram. Umas são esmagadas, outras são puxadas. Por isso, madeira fina aguenta toneladas.",
+   "text": "E o melhor: as peças quase não dobram. Umas são esmagadas, outras são puxadas. Por isso, madeira fina aguenta toneladas.",
    "audio": "episodes/telhado/curioso.mp3",
    "audioDelay": 0.25,
-   "durationInFrames": 372,
+   "durationInFrames": 313,
    "words": [
     {
      "text": "E",
-     "start": 0.347,
-     "end": 0.477
+     "start": 0.346,
+     "end": 0.462
     },
     {
-     "text": "aqui",
-     "start": 0.489,
-     "end": 0.677
+     "text": "o",
+     "start": 0.474,
+     "end": 0.497
     },
     {
-     "text": "está",
-     "start": 0.689,
-     "end": 0.949
+     "text": "melhor:",
+     "start": 0.508,
+     "end": 0.879
     },
     {
-     "text": "a",
-     "start": 0.96,
-     "end": 0.996
-    },
-    {
-     "text": "parte",
-     "start": 1.008,
-     "end": 1.326
-    },
-    {
-     "text": "mais",
-     "start": 1.338,
-     "end": 1.574
-    },
-    {
-     "text": "curiosa.",
-     "start": 1.585,
-     "end": 2.14
-    },
-    {
-     "text": "As",
-     "start": 2.95,
-     "end": 3.163
+     "text": "as",
+     "start": 1.18,
+     "end": 1.33
     },
     {
      "text": "peças",
-     "start": 3.175,
-     "end": 3.552
+     "start": 1.342,
+     "end": 1.712
     },
     {
      "text": "quase",
-     "start": 3.564,
-     "end": 3.906
+     "start": 1.724,
+     "end": 2.059
     },
     {
      "text": "não",
-     "start": 3.917,
-     "end": 4.071
+     "start": 2.071,
+     "end": 2.256
     },
     {
      "text": "dobram.",
-     "start": 4.083,
-     "end": 4.483
+     "start": 2.268,
+     "end": 2.661
     },
     {
      "text": "Umas",
-     "start": 5.297,
-     "end": 5.592
+     "start": 3.456,
+     "end": 3.745
     },
     {
      "text": "são",
-     "start": 5.604,
-     "end": 5.745
+     "start": 3.757,
+     "end": 3.896
     },
     {
      "text": "esmagadas,",
-     "start": 5.757,
-     "end": 6.37
+     "start": 3.907,
+     "end": 4.509
     },
     {
      "text": "outras",
-     "start": 6.594,
-     "end": 6.925
+     "start": 4.729,
+     "end": 5.053
     },
     {
      "text": "são",
-     "start": 6.936,
-     "end": 7.09
+     "start": 5.065,
+     "end": 5.215
     },
     {
      "text": "puxadas.",
-     "start": 7.101,
-     "end": 7.738
+     "start": 5.227,
+     "end": 5.852
     },
     {
      "text": "Por",
-     "start": 8.552,
-     "end": 8.729
+     "start": 6.65,
+     "end": 6.824
     },
     {
      "text": "isso,",
-     "start": 8.741,
-     "end": 9.047
+     "start": 6.836,
+     "end": 7.137
     },
     {
      "text": "madeira",
-     "start": 9.271,
-     "end": 9.696
+     "start": 7.356,
+     "end": 7.773
     },
     {
      "text": "fina",
-     "start": 9.708,
-     "end": 9.955
+     "start": 7.785,
+     "end": 8.028
     },
     {
      "text": "aguenta",
-     "start": 9.967,
-     "end": 10.309
+     "start": 8.039,
+     "end": 8.375
     },
     {
      "text": "toneladas.",
-     "start": 10.321,
-     "end": 11.028
+     "start": 8.387,
+     "end": 9.081
     }
    ]
   },
   {
    "id": "outro",
-   "text": "Repita a tesoura a cada metro, e o telhado inteiro fica de pé. Siga para ver o que segura tudo isso: a fundação.",
+   "text": "Repita isso a cada metro e cubra com as telhas. Parabéns, você construiu uma tesoura. Se já sabia, comente tesoura. Se não sabia, comente aprendi.",
    "audio": "episodes/telhado/outro.mp3",
    "audioDelay": 0.25,
-   "durationInFrames": 267,
+   "durationInFrames": 379,
    "words": [
     {
      "text": "Repita",
-     "start": 0.347,
-     "end": 0.854
+     "start": 0.346,
+     "end": 0.844
+    },
+    {
+     "text": "isso",
+     "start": 0.856,
+     "end": 1.064
     },
     {
      "text": "a",
-     "start": 0.866,
-     "end": 0.901
-    },
-    {
-     "text": "tesoura",
-     "start": 0.913,
-     "end": 1.314
-    },
-    {
-     "text": "a",
-     "start": 1.326,
-     "end": 1.361
+     "start": 1.075,
+     "end": 1.11
     },
     {
      "text": "cada",
-     "start": 1.373,
-     "end": 1.585
+     "start": 1.122,
+     "end": 1.365
     },
     {
-     "text": "metro,",
-     "start": 1.597,
-     "end": 1.963
+     "text": "metro",
+     "start": 1.376,
+     "end": 1.735
     },
     {
      "text": "e",
-     "start": 2.199,
-     "end": 2.305
+     "start": 1.747,
+     "end": 1.781
     },
     {
-     "text": "o",
-     "start": 2.317,
-     "end": 2.364
+     "text": "cubra",
+     "start": 1.793,
+     "end": 2.094
     },
     {
-     "text": "telhado",
-     "start": 2.375,
-     "end": 2.753
+     "text": "com",
+     "start": 2.106,
+     "end": 2.279
     },
     {
-     "text": "inteiro",
-     "start": 2.765,
-     "end": 3.142
+     "text": "as",
+     "start": 2.291,
+     "end": 2.406
     },
     {
-     "text": "fica",
-     "start": 3.154,
-     "end": 3.401
+     "text": "telhas.",
+     "start": 2.418,
+     "end": 2.893
     },
     {
-     "text": "de",
-     "start": 3.413,
-     "end": 3.508
+     "text": "Parabéns,",
+     "start": 3.688,
+     "end": 4.301
     },
     {
-     "text": "pé.",
-     "start": 3.519,
-     "end": 3.779
+     "text": "você",
+     "start": 4.405,
+     "end": 4.683
     },
     {
-     "text": "Siga",
-     "start": 4.59,
-     "end": 4.967
+     "text": "construiu",
+     "start": 4.694,
+     "end": 5.192
     },
     {
-     "text": "para",
-     "start": 4.979,
-     "end": 5.167
+     "text": "uma",
+     "start": 5.204,
+     "end": 5.343
     },
     {
-     "text": "ver",
-     "start": 5.179,
-     "end": 5.356
+     "text": "tesoura.",
+     "start": 5.354,
+     "end": 5.84
     },
     {
-     "text": "o",
-     "start": 5.368,
-     "end": 5.415
+     "text": "Se",
+     "start": 6.639,
+     "end": 6.812
     },
     {
-     "text": "que",
-     "start": 5.427,
-     "end": 5.521
+     "text": "já",
+     "start": 6.824,
+     "end": 6.986
     },
     {
-     "text": "segura",
-     "start": 5.533,
-     "end": 5.958
+     "text": "sabia,",
+     "start": 6.998,
+     "end": 7.461
     },
     {
-     "text": "tudo",
-     "start": 5.969,
-     "end": 6.3
+     "text": "comente",
+     "start": 7.669,
+     "end": 8.051
     },
     {
-     "text": "isso:",
-     "start": 6.311,
-     "end": 6.583
+     "text": "tesoura.",
+     "start": 8.062,
+     "end": 8.537
     },
     {
-     "text": "a",
-     "start": 6.807,
-     "end": 6.901
+     "text": "Se",
+     "start": 9.336,
+     "end": 9.532
     },
     {
-     "text": "fundação.",
-     "start": 6.913,
-     "end": 7.538
+     "text": "não",
+     "start": 9.544,
+     "end": 9.718
+    },
+    {
+     "text": "sabia,",
+     "start": 9.729,
+     "end": 10.204
+    },
+    {
+     "text": "comente",
+     "start": 10.389,
+     "end": 10.794
+    },
+    {
+     "text": "aprendi.",
+     "start": 10.806,
+     "end": 11.28
     }
    ]
   }

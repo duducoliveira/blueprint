@@ -203,6 +203,7 @@ export const Abre: React.FC = () => {
         ABREM
       </Title>
       <Scene3D cam={cam} items={[...groundGrid(9), shadow(), ...walls(deg, wallSt), ...rafters]}>
+        <Callout at={svgPt(v.lerp(nf.L, nf.A, 0.35), cam)} label={[70, 1370]} text="PERNAS" sub="VIGAS INCLINADAS" from={at("pernas")} color={c.compression} />
         <Arrow from={[lp[0] - 10, lp[1] + 40]} to={[lp[0] - 150, lp[1] + 40]} start={em + 4} color={c.danger} width={7} head={24} />
         <Arrow from={[rp[0] + 10, rp[1] + 40]} to={[rp[0] + 150, rp[1] + 40]} start={em + 4} color={c.danger} width={7} head={24} />
       </Scene3D>
@@ -216,7 +217,7 @@ export const Linha: React.FC = () => {
   const { at, duration } = useScene();
   const f = useCurrentFrame();
   const cam = camMove(f, duration, { ...CAM_HOUSE, yaw: -22, pitch: 20, zoom: 66 }, { yaw: -12, zoom: 70 });
-  const am = at("amarre");
+  const am = at("amarra");
   const deg = tw(f, am + 14, am + 50, OPEN, 0);
   const items: Item[] = [...groundGrid(9), shadow(), ...walls(deg, deg > 0.5 ? { color: c.danger, tint: 0.55 * (deg / OPEN) } : {})];
   ZS.forEach((z, i) => {
@@ -225,7 +226,7 @@ export const Linha: React.FC = () => {
   const nf = nodes(FRONT, 0);
   return (
     <AbsoluteFill>
-      <Title kicker="SOLUÇÃO 1" from={am} color={c.tension}>
+      <Title kicker="SOLUÇÃO 1" from={at("linha") - 4} color={c.tension}>
         A LINHA
       </Title>
       <Reveal from={at("corda")} style={{ top: 430, left: 64, fontSize: 30, letterSpacing: 4, color: c.dim }}>
@@ -248,7 +249,7 @@ export const Enverga: React.FC = () => {
   const { at, duration } = useScene();
   const f = useCurrentFrame();
   const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -24 }, { yaw: -14 });
-  const env = at("envergar");
+  const env = at("enverga");
   const sag = tw(f, env - 6, env + 26, 0, 0.55);
   const items: Item[] = [...groundGrid(9), ...walls(0, { opacity: 0.6 })];
   ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 } })));
@@ -273,7 +274,7 @@ export const Pendural: React.FC = () => {
   const { at, duration } = useScene();
   const f = useCurrentFrame();
   const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -14 }, { yaw: -8 });
-  const pe = at("pendure");
+  const pe = at("pendura");
   const g = tw(f, pe, pe + 22);
   const sag = tw(f, pe + 14, pe + 34, 0.55, 0);
   const items: Item[] = [...groundGrid(9), ...walls(0, { opacity: 0.6 })];
@@ -282,7 +283,7 @@ export const Pendural: React.FC = () => {
   const n = nodes(FRONT);
   return (
     <AbsoluteFill>
-      <Title kicker="SOLUÇÃO 2" from={pe} color={c.tension}>
+      <Title kicker="SOLUÇÃO 2" from={at("pendural") - 4} color={c.tension}>
         O PENDURAL
       </Title>
       <Scene3D cam={cam} items={items}>
@@ -297,7 +298,7 @@ export const Cede: React.FC = () => {
   const { at, duration } = useScene();
   const f = useCurrentFrame();
   const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -8 }, { yaw: -18, zoom: 96 });
-  const ce = at("ceder");
+  const ce = at("cede");
   const sag = tw(f, ce - 10, ce + 22, 0, 0.42);
   const items: Item[] = [...groundGrid(9), ...walls(0, { opacity: 0.6 })];
   ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 } })));
@@ -328,19 +329,20 @@ export const Escoras: React.FC = () => {
   const f = useCurrentFrame();
   const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -18, zoom: 96 }, { yaw: -26, zoom: 92 });
   const es = at("escoras");
-  const g = tw(f, es, es + 20);
-  const sag = tw(f, es + 12, es + 32, 0.42, 0);
+  const ap = at("apoia");
+  const g = tw(f, ap, ap + 24);
+  const sag = tw(f, ap + 14, ap + 36, 0.42, 0);
   const items: Item[] = [...groundGrid(9), ...walls(0, { opacity: 0.6 })];
   ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 } })));
   items.push(...truss(FRONT, 0, { pernas: sag > 0.05 ? RED : YEL, linha: CYA, pendural: CYA, escoras: YEL, sagPerna: sag, grow: { escoras: g } }));
   const n = nodes(FRONT);
   return (
     <AbsoluteFill>
-      <Title kicker="SOLUÇÃO 3" from={es} color={c.compression}>
+      <Title kicker="SOLUÇÃO 3" from={es - 4} color={c.compression}>
         AS ESCORAS
       </Title>
       <Scene3D cam={cam} items={items}>
-        <Callout at={svgPt(v.lerp(n.M, n.P2, 0.55), cam)} label={[1010, 1370]} text="ESCORA" sub="APOIA O MEIO DA PERNA" from={es + 8} color={c.compression} align="right" />
+        <Callout at={svgPt(v.lerp(n.M, n.P2, 0.55), cam)} label={[1010, 1370]} text="ESCORAS" sub="APOIAM O MEIO DA PERNA" from={es} color={c.compression} align="right" />
       </Scene3D>
     </AbsoluteFill>
   );
@@ -352,7 +354,7 @@ export const Triangulo: React.FC = () => {
   const f = useCurrentFrame();
   const tr = at("triangulos");
   const qd = at("quadrado");
-  const tb = at("empurrao");
+  const tb = at("tomba");
   const t2 = at("triangulo", 2);
   const swap = tw(f, qd - 10, qd + 4);
   // parte A: a tesoura acende seus 4 triângulos
@@ -492,8 +494,10 @@ export const Outro: React.FC = () => {
   const f = useCurrentFrame();
   const cam = camMove(f, duration, { ...CAM_HOUSE, yaw: -58, pitch: 24, zoom: 60 }, { yaw: -24, zoom: 64 });
   const rp = at("repita");
-  const te = at("telhado");
-  const sg = at("siga");
+  const te = at("telhas");
+  const pb = at("parabens");
+  const sg = at("sabia", 1);
+  const sg2 = at("sabia", 2);
   const items: Item[] = [...groundGrid(9), shadow(), ...walls(0, {}, false)];
   ZS.forEach((z, i) => {
     const g = tw(f, rp + i * 4, rp + 14 + i * 4);
@@ -510,25 +514,39 @@ export const Outro: React.FC = () => {
       }
   items.push(...roof(tw(f, te, te + 24, 0, 0.9)));
   const dim = tw(f, sg, sg + 12, 1, 0.22);
-  const card = progress(f, sg + 4, 14);
+  const card = progress(f, sg - 4, 12);
   return (
     <AbsoluteFill>
       <div style={{ opacity: dim }}>
-        <Reveal from={rp} style={{ top: 270, left: 64, fontSize: 28, letterSpacing: 8, color: c.dim }}>
-          UMA TESOURA A CADA
-        </Reveal>
-        <Stat label="" value={1} unit="METRO" from={at("metro")} dur={6} x={60} y={300} size={150} color={c.accent} />
+        <div style={{ opacity: tw(f, pb - 8, pb, 1, 0) }}>
+          <Reveal from={rp} style={{ top: 270, left: 64, fontSize: 28, letterSpacing: 8, color: c.dim }}>
+            UMA TESOURA A CADA
+          </Reveal>
+          <Stat label="" value={1} unit="METRO" from={at("metro")} dur={6} x={60} y={300} size={150} color={c.accent} />
+        </div>
+        <Title kicker="VOCÊ CONSTRUIU UMA TESOURA" from={pb} color={c.accent} size={120}>
+          PARABÉNS!
+        </Title>
       </div>
       <div style={{ opacity: dim }}>
         <Scene3D cam={cam} items={items} />
       </div>
       {card > 0 && (
-        <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", fontFamily: brand.font, opacity: card, transform: `scale(${0.92 + 0.08 * card})` }}>
-          <div style={{ fontSize: 30, letterSpacing: 10, color: c.dim, marginTop: -260 }}>MAIS COMO ISSO EM</div>
-          <div style={{ fontSize: 96, fontWeight: 800, color: c.accent, marginTop: 12, letterSpacing: -1 }}>{brand.handle}</div>
-          <div style={{ marginTop: 26, padding: "14px 30px", border: `3px solid ${c.line}`, borderRadius: 10, fontSize: 32, fontWeight: 700, letterSpacing: 6, color: c.line }}>
-            PRÓXIMO: A FUNDAÇÃO
-          </div>
+        <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", fontFamily: brand.font, opacity: card }}>
+          <div style={{ fontSize: 30, letterSpacing: 10, color: c.dim, marginTop: -200 }}>COMENTE AÍ</div>
+          {[
+            { from: sg, q: "JÁ SABIA?", w: "TESOURA", color: c.accent },
+            { from: sg2, q: "NÃO SABIA?", w: "APRENDI", color: c.tension },
+          ].map((r) => {
+            const o = progress(f, r.from, 10);
+            return (
+              <div key={r.w} style={{ opacity: o, transform: `translateY(${(1 - o) * 20}px)`, marginTop: 30, width: 760, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "22px 34px", border: `3px solid ${r.color}`, borderRadius: 14, background: "rgba(16,40,82,0.85)" }}>
+                <span style={{ fontSize: 36, fontWeight: 600, color: c.line, letterSpacing: 2 }}>{r.q}</span>
+                <span style={{ fontSize: 52, fontWeight: 800, color: r.color, letterSpacing: 2 }}>“{r.w}”</span>
+              </div>
+            );
+          })}
+          <div style={{ marginTop: 50, fontSize: 30, letterSpacing: 6, color: c.dim }}>PRÓXIMO: A FUNDAÇÃO · {brand.handle.toUpperCase()}</div>
         </AbsoluteFill>
       )}
     </AbsoluteFill>

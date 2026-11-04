@@ -45,19 +45,26 @@ Mantenha esse código em todos os episódios; o público aprende a "ler" os víd
 **Formato**: 45–60 s, com o gancho em pergunta nos 2 primeiros segundos. Cada cena responde a um "por quê" e
 cria o próximo. Fecha com uma chamada para o próximo episódio, o que gera sequência e incentiva seguir o perfil.
 
-**Estrutura que funciona: uma cadeia de problema → solução** (usada no EP.01 e tirada das referências):
-1. **Experimento em 2ª pessoa + número**: "Coloque cinco toneladas de telha em cima da sua casa. Por que ela não desaba?"
-2. **Problema 1**, mostrado falhando: "...ele empurra as paredes para fora, até elas abrirem."
-3. **Solução 1**: "Solução: amarre as duas pontas... a linha."
-4. **Problema 2, criado pela própria solução**: "Só que a linha é longa... começa a envergar."
-5. **Solução 2**: "Então pendure a linha lá no topo..."
-6. Repita o par problema/solução enquanto houver fôlego (2 a 3 vezes).
-7. **O princípio**: "Repare: a tesoura virou só triângulos."
-8. **A virada final**: "E aqui está a parte mais curiosa..." (algo contraintuitivo)
-9. **Gancho do próximo episódio**: "Siga para ver o que segura tudo isso: a fundação."
+**Fórmula do roteiro: "você constrói do zero"** (padrão do vídeo de referência):
 
-Na tela, cada cena ganha um rótulo **PROBLEMA N** em vermelho ou **SOLUÇÃO N** em amarelo/ciano. Frases curtas,
-no presente, falando com "você". Palavras de transição ajudam: *só que*, *mas*, *então*, *solução*, *repare*.
+O espectador é quem constrói. Cada peça nasce como **a solução do problema anterior** e só então ganha nome.
+O ciclo se repete a cada 5–8 s:
+
+> **Mas…** (problema, mostrado falhando em vermelho)
+> **Então você…** (a invenção, descrita sem jargão: "uma viga deitada", "uma peça em pé")
+> **Essa é a ___.** (o nome técnico aparece na tela no mesmo instante)
+
+Exemplo do EP.01:
+1. "Você precisa segurar cinco toneladas de telha em cima de uma casa."
+2. "Então você apoia vigas inclinadas nas paredes. **Essas são as pernas.** Mas o peso empurra as pontas para fora…"
+3. "Então você amarra as duas pontas com uma viga deitada… **Essa é a linha.**"
+4. "Mas a linha é comprida… ela enverga no meio." → pendural → "Mas as pernas também são compridas…" → escoras
+5. Um momento "repare" com o princípio por trás (os triângulos) e um fato curioso.
+6. **Fechamento com chamada para comentar**: "Parabéns, você construiu uma tesoura. Se já sabia, comente *tesoura*.
+   Se não sabia, comente *aprendi*." Os dois lados comentam, e isso alimenta o algoritmo.
+
+Regras: frases curtas no presente; descreva a peça pelo que ela faz antes de dizer o nome; nunca dois nomes
+técnicos na mesma frase.
 
 **Pauta inicial** (séries funcionam melhor que temas soltos):
 - *Casa por dentro*: tesoura de telhado ✅, fundação (sapata × radier × estaca), viga e pilar, laje, por que o

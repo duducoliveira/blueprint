@@ -2,17 +2,17 @@
   "id": "telhado",
   "title": "Tesoura de telhado",
   "voice": "pt-BR-AntonioNeural",
-  "rate": "+6%",
+  "rate": "+8%",
   "scenes": [
-    { "id": "hook",      "text": "Coloque cinco toneladas de telha em cima da sua casa. Por que ela não desaba?" },
-    { "id": "abre",      "text": "Apoie tudo em vigas inclinadas, e o peso não desce reto. Ele empurra as paredes para fora, até elas abrirem." },
-    { "id": "linha",     "text": "Solução: amarre as duas pontas com uma viga deitada, a linha. Ela segura as paredes como uma corda esticada." },
-    { "id": "enverga",   "text": "Só que a linha é longa. Com o forro pendurado, ela começa a envergar no meio." },
-    { "id": "pendural",  "text": "Então pendure a linha lá no topo, com uma peça vertical: o pendural." },
-    { "id": "cede",      "text": "Mas as pernas também são longas. Com o peso das telhas, cada uma começa a ceder." },
-    { "id": "escoras",   "text": "A resposta são as escoras. Elas apoiam o meio de cada perna no pé do pendural." },
-    { "id": "triangulo", "text": "Repare: a tesoura virou só triângulos. Um quadrado articulado tomba com um empurrão. O triângulo não muda de forma." },
-    { "id": "curioso",   "text": "E aqui está a parte mais curiosa. As peças quase não dobram. Umas são esmagadas, outras são puxadas. Por isso, madeira fina aguenta toneladas." },
-    { "id": "outro",     "text": "Repita a tesoura a cada metro, e o telhado inteiro fica de pé. Siga para ver o que segura tudo isso: a fundação." }
+    { "id": "hook",      "text": "Você precisa segurar cinco toneladas de telha em cima de uma casa." },
+    { "id": "abre",      "text": "Então você apoia vigas inclinadas nas paredes. Essas são as pernas. Mas o peso empurra as pontas para fora, e as paredes abrem." },
+    { "id": "linha",     "text": "Então você amarra as duas pontas com uma viga deitada, que segura tudo como uma corda. Essa é a linha." },
+    { "id": "enverga",   "text": "Mas a linha é comprida. Com o forro pendurado nela, ela enverga no meio." },
+    { "id": "pendural",  "text": "Então você pendura o meio dela lá no topo, com uma peça em pé. Esse é o pendural." },
+    { "id": "cede",      "text": "Mas as pernas também são compridas. Com o peso das telhas, cada uma cede." },
+    { "id": "escoras",   "text": "Então você apoia o meio de cada perna no pé do pendural, com duas peças na diagonal. Essas são as escoras." },
+    { "id": "triangulo", "text": "Repare: virou um monte de triângulos. Empurre um quadrado articulado, e ele tomba. Empurre um triângulo, e ele nem se mexe." },
+    { "id": "curioso",   "text": "E o melhor: as peças quase não dobram. Umas são esmagadas, outras são puxadas. Por isso, madeira fina aguenta toneladas." },
+    { "id": "outro",     "text": "Repita isso a cada metro e cubra com as telhas. Parabéns, você construiu uma tesoura. Se já sabia, comente tesoura. Se não sabia, comente aprendi." }
   ]
 }
