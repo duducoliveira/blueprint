@@ -149,7 +149,73 @@ const DARK = "#14315f";
 const LIT = "#2f63ad";
 
 // ─── Renderização ──────────────────────────────────────────────────
-export const Scene3D: React.FC<{ cam: Cam; items: Item[]; children?: React.ReactNode }> = ({ cam, items, children }) => {
+/**
+ * Divide faces e linhas grandes em pedaços de até `max` metros antes de ordenar.
+ * O painter's algorithm ordena pela profundidade MÉDIA; uma parede de 10 m tem a média no meio da casa,
+ * e aí vigas na ponta da parede passam por trás/na frente dela. Pedaços pequenos deixam a ordem local e correta.
+ * O contorno original da face continua desenhado (como linhas também divididas), sem emendas visíveis.
+ */
+export const subdivide = (items: Item[], max = 0.9): Item[] => {
+  const out: Item[] = [];
+  const splitLine = (a: V3, b: V3, st: Style, bias = 0) => {
+    const n = Math.max(1, Math.ceil(v.len(v.sub(b, a)) / max));
+    for (let i = 0; i < n; i++) out.push(line(v.lerp(a, b, i / n), v.lerp(a, b, (i + 1) / n), st, bias));
+  };
+  for (const it of items) {
+    if (it.kind === "line") {
+      if ((it.bias ?? 0) <= -1000 || v.len(v.sub(it.b, it.a)) <= max) out.push(it);
+      else splitLine(it.a, it.b, it.st, it.bias);
+      continue;
+    }
+    if (it.kind === "pl") {
+      // fatia o traço em trechos de ~max metros
+      let cur: V3[] = [it.pts[0]];
+      let acc = 0;
+      for (let i = 1; i < it.pts.length; i++) {
+        acc += v.len(v.sub(it.pts[i], it.pts[i - 1]));
+        cur.push(it.pts[i]);
+        if (acc >= max && i < it.pts.length - 1) {
+          out.push({ ...it, pts: cur });
+          cur = [it.pts[i]];
+          acc = 0;
+        }
+      }
+      if (cur.length > 1) out.push({ ...it, pts: cur });
+      continue;
+    }
+    const P = it.pts;
+    if (P.length !== 4 || (it.bias ?? 0) <= -999) {
+      out.push(it);
+      continue;
+    }
+    const lu = Math.max(v.len(v.sub(P[1], P[0])), v.len(v.sub(P[2], P[3])));
+    const lv = Math.max(v.len(v.sub(P[3], P[0])), v.len(v.sub(P[2], P[1])));
+    const nu = Math.max(1, Math.ceil(lu / max));
+    const nv = Math.max(1, Math.ceil(lv / max));
+    if (nu === 1 && nv === 1) {
+      out.push(it);
+      continue;
+    }
+    const Q = (u: number, w: number): V3 => v.lerp(v.lerp(P[0], P[1], u), v.lerp(P[3], P[2], u), w);
+    const e = 0.004; // leve sobreposição para não abrir frestas entre pedaços
+    const fillSt: Style = { ...it.st, width: 0 };
+    // normal da face original (o sombreamento usa os 3 primeiros pontos)
+    for (let i = 0; i < nu; i++)
+      for (let j = 0; j < nv; j++) {
+        const u0 = Math.max(0, i / nu - e);
+        const u1 = Math.min(1, (i + 1) / nu + e);
+        const w0 = Math.max(0, j / nv - e);
+        const w1 = Math.min(1, (j + 1) / nv + e);
+        out.push(poly([Q(u0, w0), Q(u1, w0), Q(u1, w1), Q(u0, w1)], fillSt, it.bias));
+      }
+    const edgeSt: Style = { ...it.st, fill: 0 };
+    if ((it.st.width ?? 1) > 0) for (let i = 0; i < 4; i++) splitLine(P[i], P[(i + 1) % 4], edgeSt, (it.bias ?? 0) + 0.004);
+  }
+  return out;
+};
+
+export const Scene3D: React.FC<{ cam: Cam; items: Item[]; children?: React.ReactNode }> = ({ cam, items: raw, children }) => {
+  const items = subdivide(raw);
   const drawn = items.map((it, k) => {
     if (it.kind === "line") {
       const a = project(it.a, cam);
