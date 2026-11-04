@@ -3,7 +3,8 @@ import { AbsoluteFill, Easing, interpolate, useCurrentFrame } from "remotion";
 import { brand } from "../../brand";
 import { Arrow, progress } from "../../components/Draw";
 import { Callout, Reveal, Stat } from "../../components/Labels";
-import { bar, bentBar, box, Cam, groundGrid, Item, line, poly, project, Scene3D, Style, V3, v } from "../../three/engine";
+import { bar, bentBar, box, Cam, groundGrid, Item, line, poly, polyline, project, Scene3D, Style, V3, v, xform } from "../../three/engine";
+import { crack, Dim3D, doorAt, hatch, masonry, Nodes3D, plate, RefLine, terrain, windowAt } from "../../three/details";
 import { useScene } from "../../timeline";
 
 const { c } = brand;
@@ -70,9 +71,10 @@ const WH = 2.8; // altura da parede
 const RISE = 2.2; // altura da tesoura
 const ZH = 5; // meio comprimento da casa
 const RAFTER = Math.hypot(HALF, RISE);
-const ZS = Array.from({ length: 9 }, (_, i) => -4.5 + i * 1.125); // posição de cada tesoura
+const ZS = Array.from({ length: 9 }, (_, i) => -4 + i); // uma tesoura a cada 1,00 m
 const FRONT = ZS[ZS.length - 1];
 const SEC = { w: 0.12, h: 0.2 }; // seção das peças
+const WT = 0.12; // meia espessura da parede
 
 const WOOD: Style = { color: c.line, width: 2 };
 const YEL: Style = { color: c.compression, width: 2.5, tint: 0.9 };
@@ -89,42 +91,90 @@ const nodes = (z: number, deg = 0) => {
   return { L: lt, R: rt, A, M, P1: v.lerp(lt, A, 0.5), P2: v.lerp(rt, A, 0.5) };
 };
 
+/** Terreno em corte + grade: a "maquete" onde tudo acontece. */
+const site = (op = 1): Item[] => [...terrain(7, 7, 0.7), ...groundGrid(7, 1, { opacity: op })];
+
+const WINDOWS = [-2.5, 2.5]; // centro (z) das janelas nas paredes compridas
+const WIN = { w: 1.2, h: 1.0, y: 1.55 };
+
+/** Uma parede comprida (lado sgn = -1 esquerda, +1 direita), com alvenaria, janelas, frechal e corte hachurado. */
+const longWall = (sgn: number, deg: number, st: Style, cutEnds: boolean): Item[] => {
+  const x = sgn * HALF;
+  const outer = x + sgn * (WT + 0.005);
+  const items: Item[] = [
+    ...box([x - WT, 0, -ZH], [x + WT, WH, ZH], st),
+    // frechal: viga de madeira no topo da parede, onde a tesoura apoia
+    ...bar([x, WH + 0.07, -ZH], [x, WH + 0.07, ZH], 0.16, 0.14, { ...WOOD, opacity: st.opacity }),
+    ...masonry([outer, 0, -ZH], [0, 0, 1], 2 * ZH, WH, { opacity: 0.16 * (st.opacity ?? 1) }, WINDOWS.map((z) => ({ z0: z + ZH - WIN.w / 2, z1: z + ZH + WIN.w / 2, y0: WIN.y - WIN.h / 2, y1: WIN.y + WIN.h / 2 }))),
+    ...WINDOWS.flatMap((z) => windowAt([outer, WIN.y, z], [0, 0, 1], [sgn, 0, 0], WIN.w, WIN.h, { opacity: st.opacity })),
+  ];
+  if (cutEnds)
+    for (const z of [ZH + 0.005, -ZH - 0.005]) items.push(...hatch([x - WT, 0, z], [2 * WT, 0, 0], [0, WH, 0], 0.07, { opacity: st.opacity }, 0.03));
+  return xform(items, (p) => v.rotZ(p, [x, 0, 0], sgn < 0 ? deg : -deg));
+};
+
 const walls = (deg = 0, st: Style = {}, gables = false): Item[] => {
   const s = { color: c.line, width: 2, ...st };
-  const out = [
-    ...box([-HALF - 0.12, 0, -ZH], [-HALF + 0.12, WH, ZH], s, (p) => v.rotZ(p, [-HALF, 0, 0], deg)),
-    ...box([HALF - 0.12, 0, -ZH], [HALF + 0.12, WH, ZH], s, (p) => v.rotZ(p, [HALF, 0, 0], -deg)),
-  ];
+  const out = [...longWall(-1, deg, s, !gables), ...longWall(1, deg, s, !gables)];
   if (gables) {
-    out.push(...box([-HALF, 0, ZH - 0.24], [HALF, WH, ZH], s), ...box([-HALF, 0, -ZH], [HALF, WH, -ZH + 0.24], s));
+    out.push(...box([-HALF, 0, ZH - 2 * WT], [HALF, WH, ZH], s), ...box([-HALF, 0, -ZH], [HALF, WH, -ZH + 2 * WT], s));
     for (const z of [ZH + 0.01, -ZH - 0.01]) out.push(poly([[-HALF, WH, z], [0, WH + RISE, z], [HALF, WH, z]], s));
+    out.push(
+      ...masonry([-HALF, 0, ZH + 0.012], [1, 0, 0], 2 * HALF, WH, { opacity: 0.16 * (s.opacity ?? 1) }, [{ z0: HALF - 0.45, z1: HALF + 0.45, y0: 0, y1: 2.1 }, { z0: HALF + 1.9, z1: HALF + 3.1, y0: WIN.y - 0.5, y1: WIN.y + 0.5 }]),
+      ...doorAt([0, 0, ZH + 0.012], [1, 0, 0], [0, 0, 1], 0.9, 2.1, { opacity: s.opacity }),
+      ...windowAt([2.5, WIN.y, ZH + 0.012], [1, 0, 0], [0, 0, 1], WIN.w, WIN.h, { opacity: s.opacity }),
+      // óculo de ventilação no oitão
+      ...windowAt([0, WH + 0.85, ZH + 0.012], [1, 0, 0], [0, 0, 1], 0.6, 0.4, { opacity: s.opacity }),
+    );
   }
   return out;
 };
 
 const shadow = (op = 0.28): Item => poly([[-HALF - 0.6, 0.01, -ZH - 0.6], [HALF + 0.6, 0.01, -ZH - 0.6], [HALF + 0.6, 0.01, ZH + 0.6], [-HALF - 0.6, 0.01, ZH + 0.6]], { color: "#0a1a38", fill: op, width: 0, tint: 1 }, -999);
 
-/** Telhado: duas águas com fiadas de telha. */
-const roof = (op = 1, rows = 9): Item[] => {
+/** Telhado: duas águas com telhas desenhadas (fiadas com recorte arredondado + canais), cumeeira e beiral. */
+const roof = (op = 1, rows = 12): Item[] => {
   if (op <= 0) return [];
   const o = 0.5; // beiral
-  const ext = (p: V3, dx: number): V3 => [p[0] + dx * o, p[1] - (RISE / HALF) * o, p[2]];
+  const T = 0.4; // largura da telha
   const st: Style = { color: c.line, width: 2, opacity: op, fill: 0.95 };
   const out: Item[] = [];
+  const z0 = -ZH - o;
+  const z1 = ZH + o;
   for (const sgn of [-1, 1]) {
-    const e0 = ext([sgn * HALF, WH + 0.12, 0], sgn);
-    const top: V3 = [0, WH + RISE + 0.12, 0];
-    out.push(poly([[e0[0], e0[1], -ZH - o], [top[0], top[1], -ZH - o], [top[0], top[1], ZH + o], [e0[0], e0[1], ZH + o]], st));
-    for (let i = 1; i < rows; i++) {
+    const e0: V3 = [sgn * (HALF + o), WH + 0.14 - (RISE / HALF) * o, 0];
+    const top: V3 = [0, WH + RISE + 0.14, 0];
+    const nrm = v.norm([sgn * RISE, HALF, 0]);
+    out.push(poly([[e0[0], e0[1], z0], [top[0], top[1], z0], [top[0], top[1], z1], [e0[0], e0[1], z1]], st));
+    // espessura do telhado na borda (beiral)
+    out.push(poly([[e0[0], e0[1], z0], [e0[0], e0[1] - 0.12, z0], [e0[0], e0[1] - 0.12, z1], [e0[0], e0[1], z1]], st));
+    for (let i = 0; i < rows; i++) {
       const p = v.lerp(e0, top, i / rows);
-      out.push(line([p[0], p[1] + 0.02, -ZH - o], [p[0], p[1] + 0.02, ZH + o], { color: c.dim, width: 1.5, opacity: op }, 0.05));
+      const pts: V3[] = [];
+      for (let z = z0; z <= z1 + 1e-6; z += T / 4) {
+        const bump = 0.05 * Math.abs(Math.sin((Math.PI * (z - z0)) / T));
+        pts.push(v.add([p[0], p[1], z], v.mul(nrm, 0.02 + bump)));
+      }
+      out.push(polyline(pts, { color: c.line, width: 1.4, opacity: 0.55 * op }, 0.05));
     }
+    for (let z = z0 + T; z < z1 - 1e-6; z += T) out.push(line(v.add([e0[0], e0[1], z], v.mul(nrm, 0.02)), v.add([top[0], top[1], z], v.mul(nrm, 0.02)), { color: c.line, width: 1, opacity: 0.22 * op }, 0.04));
   }
+  // cumeeira (telhas curvas no topo)
+  out.push(...bar([0, WH + RISE + 0.2, z0], [0, WH + RISE + 0.2, z1], 0.3, 0.16, { color: c.line, width: 2, opacity: op }).map((it) => ({ ...it, bias: 0.1 })));
   return out;
 };
 
 /** Uma tesoura completa (ou parcial) em z. */
-type Parts = { pernas?: Style | null; linha?: Style | null; pendural?: Style | null; escoras?: Style | null; grow?: Partial<Record<"linha" | "pendural" | "escoras", number>>; sagLinha?: number; sagPerna?: number };
+type Parts = {
+  pernas?: Style | null;
+  linha?: Style | null;
+  pendural?: Style | null;
+  escoras?: Style | null;
+  grow?: Partial<Record<"linha" | "pendural" | "escoras", number>>;
+  sagLinha?: number;
+  sagPerna?: number;
+  plates?: number; // opacidade das chapas de ligação (0 = sem)
+};
 const truss = (z: number, deg: number, p: Parts): Item[] => {
   const n = nodes(z, deg);
   const out: Item[] = [];
@@ -139,7 +189,7 @@ const truss = (z: number, deg: number, p: Parts): Item[] => {
     const g = p.grow?.linha ?? 1;
     if (p.sagLinha) out.push(...bentBar(n.L, n.R, p.sagLinha, [0, -1, 0], SEC.w, SEC.h, p.linha));
     else {
-      out.push(...bar(n.L, v.lerp(n.L, n.M, 1), SEC.w, SEC.h, p.linha, g));
+      out.push(...bar(n.L, n.M, SEC.w, SEC.h, p.linha, g));
       out.push(...bar(n.R, n.M, SEC.w, SEC.h, p.linha, g));
     }
   }
@@ -148,7 +198,19 @@ const truss = (z: number, deg: number, p: Parts): Item[] => {
     const g = p.grow?.escoras ?? 1;
     out.push(...bar(n.M, n.P1, SEC.w, SEC.h * 0.8, p.escoras, g), ...bar(n.M, n.P2, SEC.w, SEC.h * 0.8, p.escoras, g));
   }
+  if (p.plates) {
+    const ps = [n.L, n.R, n.A];
+    if (p.pendural) ps.push(n.M);
+    if (p.escoras && (p.grow?.escoras ?? 1) >= 1) ps.push(n.P1, n.P2);
+    for (const q of ps) out.push(...plate(q, z + SEC.w / 2, 0.36, { opacity: p.plates }).map((it) => ({ ...it, bias: 0.08 })));
+  }
   return out;
+};
+
+/** Pontos dos nós visíveis de uma tesoura (para parafusos/articulações). */
+const nodePts = (z: number, which: ("L" | "R" | "A" | "M" | "P1" | "P2")[], deg = 0, dz = SEC.w / 2 + 0.02): V3[] => {
+  const n = nodes(z, deg);
+  return which.map((k) => v.add(n[k], [0, 0, dz]));
 };
 
 // Câmeras base
@@ -169,8 +231,12 @@ export const Hook: React.FC = () => {
       <Stat label="PESO SOBRE A CASA" value={5} unit="TONELADAS" sub="≈ 50 KG POR M² DE TELHA" from={at("cinco")} dur={16} x={64} y={270} size={170} color={c.accent} />
       <Scene3D
         cam={cam}
-        items={[...groundGrid(9, 1, { opacity: tw(f, 0, 12) }), shadow(0.3 * wallsOp), ...walls(0, { opacity: wallsOp }, true), ...roof(roofOp)]}
-      />
+        items={[...site(tw(f, 0, 12)), shadow(0.3 * wallsOp), ...walls(0, { opacity: wallsOp }, true), ...roof(roofOp)]}
+      >
+        <Dim3D cam={cam} a={[-HALF - WT, 0, ZH + 0.8]} b={[HALF + WT, 0, ZH + 0.8]} off={[0, 0, 0.7]} label="8,00 m" from={28} />
+        <Dim3D cam={cam} a={[-HALF - 0.8, 0, -ZH]} b={[-HALF - 0.8, 0, ZH]} off={[-0.7, 0, 0]} label="10,00 m" from={36} />
+        <Dim3D cam={cam} a={[HALF + WT, 0, ZH]} b={[HALF + WT, WH, ZH]} off={[0.9, 0, 0]} label="2,80 m" from={44} />
+      </Scene3D>
       <LoadRain from={ton} pts={pts.map((p) => ({ x: p.x, y: p.y }))} len={130} />
     </AbsoluteFill>
   );
@@ -195,6 +261,16 @@ export const Abre: React.FC = () => {
   const nf = nodes(FRONT, deg);
   const lp = svgPt(nf.L, cam);
   const rp = svgPt(nf.R, cam);
+  const ab = at("abrem");
+  const cracks: Item[] =
+    f >= ab
+      ? [-1, 1].flatMap((sgn) =>
+          xform(
+            [3.6, 0.6, -2.4].flatMap((z, i) => crack([sgn * (HALF + WT + 0.01), 0.05, z], [0, 1, 0], [0, 0, 1], (0.9 + i * 0.25) * tw(f, ab + i * 4, ab + 12 + i * 4), { opacity: 0.95 })),
+            (p) => v.rotZ(p, [sgn * HALF, 0, 0], sgn < 0 ? deg : -deg),
+          ),
+        )
+      : [];
   return (
     <AbsoluteFill>
       <Title kicker="PROBLEMA 1" from={em} color={c.danger}>
@@ -202,7 +278,10 @@ export const Abre: React.FC = () => {
         <br />
         ABREM
       </Title>
-      <Scene3D cam={cam} items={[...groundGrid(9), shadow(), ...walls(deg, wallSt), ...rafters]}>
+      <Scene3D cam={cam} items={[...site(), shadow(), ...walls(deg, wallSt), ...rafters, ...cracks]}>
+        <RefLine cam={cam} a={[-HALF - WT, 0, ZH]} b={[-HALF - WT, WH + 0.6, ZH]} from={em} />
+        <RefLine cam={cam} a={[HALF + WT, 0, ZH]} b={[HALF + WT, WH + 0.6, ZH]} from={em} />
+        <Nodes3D cam={cam} pts={[nf.L, nf.R, nf.A].map((p) => v.add(p, [0, 0, SEC.w / 2 + 0.02]))} from={vi + 10} />
         <Callout at={svgPt(v.lerp(nf.L, nf.A, 0.35), cam)} label={[70, 1370]} text="PERNAS" sub="VIGAS INCLINADAS" from={at("pernas")} color={c.compression} />
         <Arrow from={[lp[0] - 10, lp[1] + 40]} to={[lp[0] - 150, lp[1] + 40]} start={em + 4} color={c.danger} width={7} head={24} />
         <Arrow from={[rp[0] + 10, rp[1] + 40]} to={[rp[0] + 150, rp[1] + 40]} start={em + 4} color={c.danger} width={7} head={24} />
@@ -219,7 +298,7 @@ export const Linha: React.FC = () => {
   const cam = camMove(f, duration, { ...CAM_HOUSE, yaw: -22, pitch: 20, zoom: 66 }, { yaw: -12, zoom: 70 });
   const am = at("amarra");
   const deg = tw(f, am + 14, am + 50, OPEN, 0);
-  const items: Item[] = [...groundGrid(9), shadow(), ...walls(deg, deg > 0.5 ? { color: c.danger, tint: 0.55 * (deg / OPEN) } : {})];
+  const items: Item[] = [...site(), shadow(), ...walls(deg, deg > 0.5 ? { color: c.danger, tint: 0.55 * (deg / OPEN) } : {})];
   ZS.forEach((z, i) => {
     items.push(...truss(z, deg, { pernas: YEL, linha: CYA, grow: { linha: tw(f, am + i * 3, am + 16 + i * 3) } }));
   });
@@ -234,6 +313,8 @@ export const Linha: React.FC = () => {
       </Reveal>
       <Scene3D cam={cam} items={items}>
         <Callout at={svgPt(v.lerp(nf.L, nf.M, 0.4), cam)} label={[90, 1370]} text="LINHA" sub="VIGA DEITADA" from={at("linha", 1) + 6} color={c.tension} />
+        <Dim3D cam={cam} a={nf.L} b={nf.R} off={[0, 0, 1.0]} label="VÃO 8,00 m" from={at("pontas")} />
+        <Nodes3D cam={cam} pts={nodePts(FRONT, ["L", "R", "A"], deg)} />
       </Scene3D>
     </AbsoluteFill>
   );
@@ -251,9 +332,10 @@ export const Enverga: React.FC = () => {
   const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -24 }, { yaw: -14 });
   const env = at("enverga");
   const sag = tw(f, env - 6, env + 26, 0, 0.55);
-  const items: Item[] = [...groundGrid(9), ...walls(0, { opacity: 0.6 })];
+  const items: Item[] = [...site(), ...walls(0, { opacity: 0.6 })];
   ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 } })));
-  items.push(...truss(FRONT, 0, { pernas: YEL, linha: sag > 0.05 ? RED : CYA, sagLinha: sag }));
+  items.push(...truss(FRONT, 0, { pernas: YEL, linha: sag > 0.05 ? RED : CYA, sagLinha: sag, plates: 1 }));
+  const n = nodes(FRONT);
   return (
     <AbsoluteFill>
       <Title kicker="PROBLEMA 2" from={env - 4} color={c.danger}>
@@ -264,6 +346,9 @@ export const Enverga: React.FC = () => {
       <ForroLoad from={at("forro")} cam={cam} sag={sag} />
       <Scene3D cam={cam} items={items}>
         <Callout at={svgPt([1.6, WH - 0.4, FRONT], cam)} label={[1010, 1370]} text="FORRO" sub="PENDURADO NA LINHA" from={at("forro") + 4} color={c.dim} align="right" />
+        <RefLine cam={cam} a={v.add(n.L, [0, 0, SEC.w / 2])} b={v.add(n.R, [0, 0, SEC.w / 2])} from={env} />
+        <Dim3D cam={cam} a={[-0.9, WH, FRONT + 0.1]} b={[-0.9, WH - sag, FRONT + 0.1]} off={[-0.6, 0, 0]} label="FLECHA" from={env + 24} color={c.danger} />
+        <Nodes3D cam={cam} pts={nodePts(FRONT, ["L", "R", "A"])} />
       </Scene3D>
     </AbsoluteFill>
   );
@@ -277,9 +362,9 @@ export const Pendural: React.FC = () => {
   const pe = at("pendura");
   const g = tw(f, pe, pe + 22);
   const sag = tw(f, pe + 14, pe + 34, 0.55, 0);
-  const items: Item[] = [...groundGrid(9), ...walls(0, { opacity: 0.6 })];
+  const items: Item[] = [...site(), ...walls(0, { opacity: 0.6 })];
   ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 } })));
-  items.push(...truss(FRONT, 0, { pernas: YEL, linha: sag > 0.05 ? RED : CYA, sagLinha: sag, pendural: CYA, grow: { pendural: g } }));
+  items.push(...truss(FRONT, 0, { pernas: YEL, linha: sag > 0.05 ? RED : CYA, sagLinha: sag, pendural: CYA, grow: { pendural: g }, plates: 1 }));
   const n = nodes(FRONT);
   return (
     <AbsoluteFill>
@@ -288,6 +373,8 @@ export const Pendural: React.FC = () => {
       </Title>
       <Scene3D cam={cam} items={items}>
         <Callout at={svgPt(v.lerp(n.A, n.M, 0.45), cam)} label={[1010, 760]} text="PENDURAL" sub="SEGURA A LINHA" from={at("pendural") + 4} color={c.tension} align="right" />
+        <Dim3D cam={cam} a={[HALF + 0.2, WH, FRONT]} b={[HALF + 0.2, WH + RISE, FRONT]} off={[0.7, 0, 0]} label="2,20 m" from={at("pendural") + 10} />
+        <Nodes3D cam={cam} pts={nodePts(FRONT, g >= 1 ? ["L", "R", "A", "M"] : ["L", "R", "A"])} />
       </Scene3D>
     </AbsoluteFill>
   );
@@ -300,9 +387,9 @@ export const Cede: React.FC = () => {
   const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -8 }, { yaw: -18, zoom: 96 });
   const ce = at("cede");
   const sag = tw(f, ce - 10, ce + 22, 0, 0.42);
-  const items: Item[] = [...groundGrid(9), ...walls(0, { opacity: 0.6 })];
+  const items: Item[] = [...site(), ...walls(0, { opacity: 0.6 })];
   ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 } })));
-  items.push(...truss(FRONT, 0, { pernas: sag > 0.05 ? RED : YEL, linha: CYA, pendural: CYA, sagPerna: sag }));
+  items.push(...truss(FRONT, 0, { pernas: sag > 0.05 ? RED : YEL, linha: CYA, pendural: CYA, sagPerna: sag, plates: 1 }));
   const tel = at("telhas");
   const pts = [0.25, 0.5, 0.75].flatMap((t) => {
     const n = nodes(FRONT);
@@ -318,6 +405,9 @@ export const Cede: React.FC = () => {
       <LoadRain from={tel} pts={pts.map((p) => ({ x: p.x, y: p.y }))} />
       <Scene3D cam={cam} items={items}>
         <Callout at={svgPt(v.lerp(nodes(FRONT).L, nodes(FRONT).A, 0.3), cam)} label={[70, 1370]} text="PERNA" sub="VIGA INCLINADA" from={at("pernas") + 2} color={c.compression} />
+        <RefLine cam={cam} a={v.add(nodes(FRONT).L, [0, 0, SEC.w / 2])} b={v.add(nodes(FRONT).A, [0, 0, SEC.w / 2])} from={ce - 6} />
+        <RefLine cam={cam} a={v.add(nodes(FRONT).R, [0, 0, SEC.w / 2])} b={v.add(nodes(FRONT).A, [0, 0, SEC.w / 2])} from={ce - 6} />
+        <Nodes3D cam={cam} pts={nodePts(FRONT, ["L", "R", "A", "M"])} />
       </Scene3D>
     </AbsoluteFill>
   );
@@ -332,9 +422,9 @@ export const Escoras: React.FC = () => {
   const ap = at("apoia");
   const g = tw(f, ap, ap + 24);
   const sag = tw(f, ap + 14, ap + 36, 0.42, 0);
-  const items: Item[] = [...groundGrid(9), ...walls(0, { opacity: 0.6 })];
+  const items: Item[] = [...site(), ...walls(0, { opacity: 0.6 })];
   ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 } })));
-  items.push(...truss(FRONT, 0, { pernas: sag > 0.05 ? RED : YEL, linha: CYA, pendural: CYA, escoras: YEL, sagPerna: sag, grow: { escoras: g } }));
+  items.push(...truss(FRONT, 0, { pernas: sag > 0.05 ? RED : YEL, linha: CYA, pendural: CYA, escoras: YEL, sagPerna: sag, grow: { escoras: g }, plates: 1 }));
   const n = nodes(FRONT);
   return (
     <AbsoluteFill>
@@ -343,6 +433,7 @@ export const Escoras: React.FC = () => {
       </Title>
       <Scene3D cam={cam} items={items}>
         <Callout at={svgPt(v.lerp(n.M, n.P2, 0.55), cam)} label={[1010, 1370]} text="ESCORAS" sub="APOIAM O MEIO DA PERNA" from={es} color={c.compression} align="right" />
+        <Nodes3D cam={cam} pts={nodePts(FRONT, g >= 1 ? ["L", "R", "A", "M", "P1", "P2"] : ["L", "R", "A", "M"])} />
       </Scene3D>
     </AbsoluteFill>
   );
@@ -363,7 +454,7 @@ export const Triangulo: React.FC = () => {
   const tri = (pts: V3[], i: number): Item => poly(pts.map((p) => v.add(p, [0, 0, 0.02])), { color: c.accent, fill: 0.35 * tw(f, tr + i * 4, tr + 8 + i * 4) * (1 - swap), tint: 1, width: 0 }, 0.2);
   const itemsA: Item[] = [
     ...groundGrid(9, 1, { opacity: 1 - swap }),
-    ...truss(FRONT, 0, { pernas: YEL, linha: CYA, pendural: CYA, escoras: YEL }).map((it) => ({ ...it, st: { ...it.st, opacity: 1 - swap } })),
+    ...truss(FRONT, 0, { pernas: YEL, linha: CYA, pendural: CYA, escoras: YEL, plates: 1 }).map((it) => ({ ...it, st: { ...it.st, opacity: 1 - swap } })),
     tri([n.L, n.P1, n.M], 0),
     tri([n.P1, n.A, n.M], 1),
     tri([n.A, n.P2, n.M], 2),
@@ -436,9 +527,9 @@ export const Curioso: React.FC = () => {
   const cam = camMove(f, duration, { ...CAM_FRONT, yaw: -42, pitch: 16, zoom: 88 }, { yaw: -12, zoom: 92 });
   const es = at("esmagadas");
   const pu = at("puxadas");
-  const items: Item[] = [...groundGrid(9), ...walls(0, { opacity: 0.6 })];
+  const items: Item[] = [...site(), ...walls(0, { opacity: 0.6 })];
   ZS.slice(0, -1).forEach((z) => items.push(...truss(z, 0, { pernas: { ...WOOD, opacity: 0.14 }, linha: { ...WOOD, opacity: 0.14 }, pendural: { ...WOOD, opacity: 0.14 }, escoras: { ...WOOD, opacity: 0.14 } })));
-  items.push(...truss(FRONT, 0, { pernas: f >= es ? YEL : WOOD, escoras: f >= es ? YEL : WOOD, linha: f >= pu ? CYA : WOOD, pendural: f >= pu ? CYA : WOOD }));
+  items.push(...truss(FRONT, 0, { pernas: f >= es ? YEL : WOOD, escoras: f >= es ? YEL : WOOD, linha: f >= pu ? CYA : WOOD, pendural: f >= pu ? CYA : WOOD, plates: 1 }));
   const n = nodes(FRONT);
   // setinhas: compressão →← (apontam para o meio da peça), tração ←→ (apontam para fora)
   const pair = (a: V3, b: V3, inward: boolean, from: number, color: string, k: number) => {
@@ -478,6 +569,7 @@ export const Curioso: React.FC = () => {
       {legend(410, es, c.compression, "ESMAGADA", "→ ←")}
       {legend(480, pu, c.tension, "PUXADA", "← →")}
       <Scene3D cam={cam} items={items}>
+        <Nodes3D cam={cam} pts={nodePts(FRONT, ["L", "R", "A", "M", "P1", "P2"])} />
         {pair(n.L, n.A, true, es + 2, c.compression, 1)}
         {pair(n.R, n.A, true, es + 4, c.compression, 2)}
         {pair(n.L, n.R, false, pu + 2, c.tension, 3)}
@@ -498,16 +590,16 @@ export const Outro: React.FC = () => {
   const pb = at("parabens");
   const sg = at("sabia", 1);
   const sg2 = at("sabia", 2);
-  const items: Item[] = [...groundGrid(9), shadow(), ...walls(0, {}, false)];
+  const items: Item[] = [...site(), shadow(), ...walls(0, {}, false)];
   ZS.forEach((z, i) => {
     const g = tw(f, rp + i * 4, rp + 14 + i * 4);
     if (g <= 0) return;
-    items.push(...truss(z, 0, { pernas: { ...YEL, opacity: g }, linha: { ...CYA, opacity: g }, pendural: { ...CYA, opacity: g }, escoras: { ...YEL, opacity: g } }));
+    items.push(...truss(z, 0, { pernas: { ...YEL, opacity: g }, linha: { ...CYA, opacity: g }, pendural: { ...CYA, opacity: g }, escoras: { ...YEL, opacity: g }, plates: g }));
   });
   // cumeeira e terças
   const tg = tw(f, rp + 40, rp + 60);
   if (tg > 0)
-    for (const t of [0, 0.33, 0.66])
+    for (const t of [0.33, 0.66, 1])
       for (const sgn of [-1, 1]) {
         const p = v.lerp([sgn * HALF, WH + SEC.h, 0], [0, WH + RISE + SEC.h, 0], t);
         items.push(...bar([p[0], p[1], -ZH], [p[0], p[1], -ZH + 2 * ZH * tg], 0.1, 0.1, WOOD));
@@ -529,7 +621,13 @@ export const Outro: React.FC = () => {
         </Title>
       </div>
       <div style={{ opacity: dim }}>
-        <Scene3D cam={cam} items={items} />
+        <Scene3D cam={cam} items={items}>
+          <Dim3D cam={cam} a={[0, WH + RISE + 0.3, FRONT - 1]} b={[0, WH + RISE + 0.3, FRONT]} off={[0, 0.9, 0]} label="1,00 m" from={at("metro")} color={c.accent} />
+          <g opacity={1 - card}>
+          <Callout at={svgPt([0, WH + RISE + 0.2, -1.5], cam)} label={[1010, 760]} text="CUMEEIRA" from={rp + 62} align="right" />
+          <Callout at={svgPt([-HALF, WH + 0.1, -2], cam)} label={[70, 1370]} text="FRECHAL" sub="VIGA SOBRE A PAREDE" from={rp + 70} />
+          </g>
+        </Scene3D>
       </div>
       {card > 0 && (
         <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", fontFamily: brand.font, opacity: card }}>

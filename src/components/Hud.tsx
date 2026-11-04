@@ -12,7 +12,7 @@ export const Hud: React.FC<{ episode: string; title: string; sheet: number; shee
       <div style={{ position: "absolute", top: 110, right: 64, ...s }}>{brand.handle.toUpperCase()}</div>
       <div style={{ position: "absolute", top: 150, left: 64, right: 64, height: 2, background: brand.c.faint }} />
       <div style={{ position: "absolute", top: 166, right: 64, ...s, fontSize: 18 }}>
-        FOLHA {String(sheet).padStart(2, "0")}/{String(sheets).padStart(2, "0")}
+        ESC 1:50 · FOLHA {String(sheet).padStart(2, "0")}/{String(sheets).padStart(2, "0")}
       </div>
     </>
   );

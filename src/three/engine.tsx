@@ -66,7 +66,8 @@ export type Style = {
 
 export type Item =
   | { kind: "poly"; pts: V3[]; st: Style; bias?: number }
-  | { kind: "line"; a: V3; b: V3; st: Style; bias?: number };
+  | { kind: "line"; a: V3; b: V3; st: Style; bias?: number }
+  | { kind: "pl"; pts: V3[]; st: Style; bias?: number };
 
 const DEF: Required<Pick<Style, "color" | "fill" | "width" | "opacity" | "tint">> = {
   color: brand.c.line,
@@ -78,6 +79,12 @@ const DEF: Required<Pick<Style, "color" | "fill" | "width" | "opacity" | "tint">
 
 export const line = (a: V3, b: V3, st: Style = {}, bias = 0): Item => ({ kind: "line", a, b, st, bias });
 export const poly = (pts: V3[], st: Style = {}, bias = 0): Item => ({ kind: "poly", pts, st, bias });
+/** Traço contínuo por vários pontos (um único elemento SVG — bom para texturas). */
+export const polyline = (pts: V3[], st: Style = {}, bias = 0): Item => ({ kind: "pl", pts, st, bias });
+
+/** Aplica uma transformação a todos os pontos de uma lista de itens (ex.: parede girando com seus detalhes). */
+export const xform = (items: Item[], fn: (p: V3) => V3): Item[] =>
+  items.map((it) => (it.kind === "line" ? { ...it, a: fn(it.a), b: fn(it.b) } : { ...it, pts: it.pts.map(fn) }));
 
 /** Caixa alinhada aos eixos (parede, laje, bloco). */
 export const box = (min: V3, max: V3, st: Style = {}, xf?: (p: V3) => V3): Item[] => {
@@ -172,6 +179,21 @@ export const Scene3D: React.FC<{ cam: Cam; items: Item[]; children?: React.React
               strokeLinecap="round"
               opacity={st.opacity}
               style={st.glow ? { filter: `drop-shadow(0 0 6px ${st.color})` } : undefined}
+            />
+          );
+        }
+        if (it.kind === "pl" && pts) {
+          return (
+            <polyline
+              key={k}
+              points={pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")}
+              fill="none"
+              stroke={st.color}
+              strokeWidth={st.width}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              strokeDasharray={st.dash}
+              opacity={st.opacity}
             />
           );
         }
